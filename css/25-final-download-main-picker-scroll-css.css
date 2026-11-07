@@ -1,0 +1,9 @@
+#downloadsPopup .download-glass-picker{
+  touch-action:pan-y !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}
+#downloadsPopup .downloads-scroll-area{
+  touch-action:pan-y !important;
+  -webkit-overflow-scrolling:touch !important;
+}

@@ -1,0 +1,5 @@
+/* في الوضع القديم: إزالة خلفية المدينة التي كانت تظهر أسفل صفحة المصحف. */
+body.interface-old {
+  background-image: none !important;
+  background-color: #fff !important;
+}

@@ -1,0 +1,16 @@
+/* في الوضع الجديد النهاري: أسفل صفحة المصحف يبقى أبيض ولا تظهر خلفية التصميم خلفه. */
+body.interface-new .app,
+body.interface-new .reader,
+body.interface-new .page-area {
+  background: #fff !important;
+  background-image: none !important;
+}
+
+/* في الوضع الليلي: منطقة ما تحت صفحة المصحف يجب أن تكون سوداء مثل الصفحة،
+   وليس مستطيلاً أبيض. */
+body.interface-new.night-mode .app,
+body.interface-new.night-mode .reader,
+body.interface-new.night-mode .page-area {
+  background: #000 !important;
+  background-image: none !important;
+}

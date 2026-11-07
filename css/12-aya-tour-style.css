@@ -1,0 +1,183 @@
+#ayaTourRoot{display:none;position:fixed;inset:0;z-index:560;pointer-events:auto}
+#ayaTourHole{
+  position:absolute;border-radius:16px;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.72);
+  border:2.5px solid #79d69a;
+  transition:top .28s ease,left .28s ease,width .28s ease,height .28s ease;
+  pointer-events:none;box-sizing:border-box;
+}
+#ayaTourTip{
+  position:absolute;max-width:min(90vw,340px);
+  background:rgba(28,42,56,.96);
+  border:1px solid rgba(200,220,235,.22);
+  border-radius:16px;padding:14px 14px 12px;
+  color:#f4f7f9;box-shadow:0 12px 36px rgba(0,0,0,.45);
+  direction:rtl;text-align:right;z-index:2;
+  transition:top .28s ease,left .28s ease;
+}
+#ayaTourTipTitle{font-weight:800;font-size:16px;margin-bottom:6px;color:#fff}
+#ayaTourTipBody{font-size:13.5px;line-height:1.75;color:#d8e0e6;margin-bottom:12px}
+#ayaTourSkip{border:0;background:transparent;color:#9ab;font-size:13px;padding:8px 6px;cursor:pointer}
+#ayaTourPrev{
+  border:0;border-radius:10px;background:rgba(255,255,255,.10);
+  color:#fff;font-size:13px;padding:9px 12px;cursor:pointer;display:none;
+}
+#ayaTourNext{
+  border:0;border-radius:10px;background:#2a5a3a;
+  color:#fff;font-size:13px;font-weight:700;padding:9px 14px;cursor:pointer;
+}
+#ayaTourDots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+
+
+/* ===== تنبيه عدم توفر الصوت أوفلاين: زجاجي / كلاسيكي ===== */
+#offlineMissingOverlay.popup-overlay{
+  z-index: 520 !important;
+}
+#offlineMissingOverlay .offline-missing-box{
+  width: min(92vw, 360px) !important;
+  max-width: 360px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#offlineMissingOverlay .offline-missing-header{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 14px;
+  margin: 0 !important;
+  border-bottom: none !important;
+}
+#offlineMissingOverlay .offline-missing-back{
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+  font-family: inherit;
+}
+#offlineMissingOverlay .offline-missing-body{
+  direction: rtl;
+  text-align: center;
+  line-height: 1.9;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 28px 22px 18px;
+}
+#offlineMissingOverlay .offline-missing-actions{
+  padding: 0 22px 22px;
+  text-align: center;
+}
+#offlineMissingOverlay .offline-missing-ok{
+  border: 0;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 10px 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* زجاجي (افتراضي / interface-new) */
+body.interface-new #offlineMissingOverlay .offline-missing-box,
+#offlineMissingOverlay .offline-missing-box{
+  background: rgba(28,42,56,.62) !important;
+  border: 1px solid rgba(200,220,235,.22) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter: blur(18px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(135%) !important;
+  color: #f4f7f9 !important;
+}
+body.interface-new #offlineMissingOverlay .offline-missing-header,
+#offlineMissingOverlay .offline-missing-header{
+  background: rgba(55,72,88,.35);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+body.interface-new #offlineMissingOverlay .offline-missing-back,
+#offlineMissingOverlay .offline-missing-back{
+  color: #e8eef4;
+}
+body.interface-new #offlineMissingOverlay .offline-missing-body,
+#offlineMissingOverlay .offline-missing-body{
+  color: #f4f7f9;
+}
+body.interface-new #offlineMissingOverlay .offline-missing-ok,
+#offlineMissingOverlay .offline-missing-ok{
+  background: rgba(55,72,88,.55);
+  border: 1px solid rgba(200,220,235,.18);
+  color: #f4f7f9;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+body.interface-new #offlineMissingOverlay .offline-missing-ok:active,
+#offlineMissingOverlay .offline-missing-ok:active{
+  background: rgba(70,92,110,.65);
+  transform: scale(.98);
+}
+
+/* كلاسيكي — أخضر مثل القائمة والأزرار */
+body.interface-old #offlineMissingOverlay .offline-missing-box{
+  background: #202020 !important;
+  border: 1px solid #555 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #eee !important;
+}
+body.interface-old #offlineMissingOverlay .offline-missing-header{
+  background: var(--green, #16803b) !important;
+  border-bottom: none !important;
+  border-radius: 18px 18px 0 0;
+}
+body.interface-old #offlineMissingOverlay .offline-missing-back{
+  color: #fff !important;
+}
+body.interface-old #offlineMissingOverlay .offline-missing-body{
+  color: #eee !important;
+}
+body.interface-old #offlineMissingOverlay .offline-missing-ok{
+  background: var(--green, #16803b) !important;
+  border: 0 !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 4px #0003 !important;
+}
+body.interface-old #offlineMissingOverlay .offline-missing-ok:active{
+  filter: brightness(.92);
+  transform: scale(.98);
+}
+
+/* كلاسيكي: قوائم بنفس طابع الواجهة الكلاسيكية */
+body.interface-old #ayaTourHole{
+  border-radius:14px;
+  border:3px solid var(--green, #16803b);
+  box-shadow:0 0 0 9999px rgba(0,0,0,.78);
+}
+body.interface-old #ayaTourTip{
+  background:#202020;
+  border:1px solid #555;
+  border-radius:18px;
+  box-shadow:0 10px 40px #0009;
+  color:#eee;
+}
+body.interface-old #ayaTourTipTitle{color:var(--green, #16803b)}
+body.interface-old #ayaTourTipBody{color:#ddd}
+body.interface-old #ayaTourSkip{color:#aaa}
+body.interface-old #ayaTourPrev{
+  background:#303030;
+  border:1px solid #555;
+  border-radius:12px;
+  color:#fff;
+}
+body.interface-old #ayaTourNext{
+  background:var(--green, #16803b);
+  border-radius:12px;
+  color:#fff;
+  box-shadow:0 2px 4px #0003;
+}
+body.interface-old #ayaTourDots .tour-dot-active{
+  background:var(--green, #16803b) !important;
+}

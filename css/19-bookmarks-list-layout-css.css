@@ -1,0 +1,55 @@
+#bookmarksPickerList .bm-row{
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 0 0 10px 0 !important;
+  box-sizing: border-box !important;
+  direction: rtl !important;
+}
+#bookmarksPickerList .bm-go{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: rgba(55,72,88,.50) !important;
+  color: #f4f7f9 !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  text-align: right !important;
+  line-height: 1.55 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+#bookmarksPickerList .bm-del{
+  flex: 0 0 48px !important;
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  height: 48px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: rgba(55,72,88,.42) !important;
+  color: #f4f7f9 !important;
+  font-size: 18px !important;
+  line-height: 48px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+body.interface-old #bookmarksPickerList .bm-go,
+body.interface-old #bookmarksPickerList .bm-del{
+  background: var(--green) !important;
+  color: #fff !important;
+}

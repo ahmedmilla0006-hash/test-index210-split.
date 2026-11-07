@@ -1,0 +1,43 @@
+/* نافذة منبثقة — مع هامش آمن تحت شريط الحالة */
+#storageManagePopup.popup-overlay{
+  z-index:100000 !important;
+  background:rgba(8,14,20,.72) !important;
+  padding-top:calc(12px + env(safe-area-inset-top, 0px)) !important;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing:border-box !important;
+}
+#storageManagePopup.popup-overlay.show{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#storageManagePopup .popup-box{
+  width:min(96vw, 520px) !important;
+  max-width:min(96vw, 520px) !important;
+  height:auto !important;
+  max-height:min(calc(88dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)), 900px) !important;
+  border-radius:18px !important;
+  margin:0 12px !important;
+  overflow:auto !important;
+  position:relative !important;
+  z-index:100002 !important;
+}
+#storageManagePopup .popup-header{
+  padding-top:8px !important;
+  flex-shrink:0 !important;
+}
+/* الغطاء العلوي معطّل — كان يغطي عنوان النافذة */
+#storageTopCover{
+  display:none !important;
+}
+#splashScreen.hide,
+body.aya-storage-from-settings #splashScreen{
+  display:none !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  width:0 !important;
+  height:0 !important;
+  overflow:hidden !important;
+  z-index:-1 !important;
+}

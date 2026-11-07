@@ -1,0 +1,29 @@
+/* خلفية المشغّل صلبة ومتطابقة على كل الأجهزة */
+body.interface-new .player,
+body.interface-new .player.ui-hidden,
+html body .player{
+  background: #1c2a38 !important;
+  background-color: #1c2a38 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
+  isolation: isolate !important;
+}
+body.interface-new.night-mode .player,
+body.night-mode .player{
+  background: #141e28 !important;
+  background-color: #141e28 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+body.interface-old .player{
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+body.interface-old.night-mode .player{
+  background: #202020 !important;
+  background-color: #202020 !important;
+}

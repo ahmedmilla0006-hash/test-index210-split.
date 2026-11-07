@@ -1,0 +1,123 @@
+body.listen-only-mode .reader,
+body.listen-only-mode .page-area,
+body.listen-only-mode #quranPage,
+body.listen-only-mode .ayah-highlight-layer,
+body.listen-only-mode .reader-info-top,
+body.listen-only-mode .reader-page-number,
+body.listen-only-mode .player{
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.listen-only-mode .menu-button{
+  display: flex !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 60 !important;
+}
+#listenOnlyPlayer{
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(24px + var(--reader-safe-top, 0px)) 20px calc(28px + var(--reader-safe-bottom, 0px));
+  box-sizing: border-box;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(22,128,59,.28), transparent 55%),
+    linear-gradient(165deg, #0b1a14 0%, #102820 40%, #0a1620 100%);
+  color: #f4f7f9;
+  direction: rtl;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.listen-only-mode #listenOnlyPlayer{ display: flex !important; }
+.lop-card{
+  width: min(92vw, 420px);
+  padding: 28px 22px 24px;
+  border-radius: 24px;
+  background: rgba(28,42,56,.55);
+  border: 1px solid rgba(200,220,235,.18);
+  box-shadow: 0 16px 48px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  text-align: center;
+}
+.lop-icon{
+  width: 88px; height: 88px; margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1fa34a, #0f6b32);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+  box-shadow: 0 8px 24px rgba(31,163,74,.35);
+}
+.lop-title{ font-size: 13px; color: rgba(230,238,244,.7); margin-bottom: 6px; font-weight: 600; }
+.lop-reader{ font-size: 22px; font-weight: 800; color: #7ddea8; margin-bottom: 18px; line-height: 1.4; }
+.lop-surah-label{ font-size: 13px; color: rgba(230,238,244,.7); margin-bottom: 8px; font-weight: 600; }
+.lop-surah-btn{
+  width: 100%; min-height: 52px; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid rgba(200,220,235,.16); background: rgba(55,72,88,.45);
+  color: #f4f7f9; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  direction: rtl; margin-bottom: 22px;
+}
+.lop-surah-btn:active{ background: rgba(70,92,110,.55); transform: scale(.99); }
+.lop-progress-row{ display: flex; align-items: center; gap: 10px; margin-bottom: 20px; direction: rtl; }
+.lop-time{ min-width: 40px; font-size: 12px; color: rgba(230,238,244,.75); }
+.lop-progress{
+  flex: 1 1 auto;
+  width: auto;
+  height: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 99px;
+  background: rgba(15,25,35,.45);
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: none;
+  pointer-events: auto;
+}
+.lop-progress::-webkit-progress-bar{ background: rgba(15,25,35,.45); }
+.lop-progress::-webkit-progress-value{ background: #50c878; border-radius: 99px; }
+.lop-progress::-moz-progress-bar{ background: #50c878; border-radius: 99px; }
+.lop-controls{ display: flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 18px; }
+.lop-ctrl{
+  width: 52px; height: 52px; border: 0; border-radius: 50%;
+  background: rgba(55,72,88,.5); color: #7ddea8; font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(200,220,235,.14);
+}
+.lop-ctrl:active{ transform: scale(.96); background: rgba(70,92,110,.6); }
+.lop-play{
+  width: 72px; height: 72px; border: 0; border-radius: 50%;
+  background: #50c878; color: #0a2018; font-size: 28px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 6px 20px rgba(80,200,120,.4); position: relative;
+}
+.lop-play:active{ transform: scale(.97); }
+.lop-play.is-loading{ opacity: .85; }
+.lop-play.is-loading::after{
+  content: ""; position: absolute; inset: 8px; border-radius: 50%;
+  border: 3px solid rgba(10,32,24,.2); border-top-color: #0a2018;
+  animation: lopSpin .7s linear infinite; pointer-events: none;
+}
+@keyframes lopSpin{ to{ transform: rotate(360deg); } }
+.lop-actions{ display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.lop-action{
+  width: 100%; min-height: 48px; border: 0; border-radius: 14px;
+  background: rgba(55,72,88,.42); color: #f4f7f9; font: inherit; font-size: 15px; font-weight: 700;
+  border: 1px solid rgba(200,220,235,.14); cursor: pointer;
+}
+.lop-action.primary{
+  background: rgba(80,200,120,.22); border-color: rgba(125,222,168,.35); color: #a8ffc5;
+}
+.lop-action:active{ transform: scale(.99); }
+.lop-status{ margin-top: 10px; font-size: 12px; color: rgba(200,220,235,.7); min-height: 18px; }
+.lop-hint{ margin-top: 14px; font-size: 12px; color: rgba(200,220,235,.55); line-height: 1.6; }
+body.interface-old #listenOnlyPlayer{ background: #1a1a1a; }
+body.interface-old .lop-card{
+  background: #25262a; border-color: #424348;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}

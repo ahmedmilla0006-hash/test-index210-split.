@@ -1,0 +1,53 @@
+/* قوائم القارئ والسورة — 90% من الشاشة */
+#readerPickerOverlay.popup-overlay,
+#surahPickerOverlay.popup-overlay{
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  inset: 0 !important;
+  z-index: 400 !important;
+  background: rgba(0,0,0,.55) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#readerPickerOverlay .popup-box,
+#surahPickerOverlay .popup-box{
+  width: 90% !important;
+  max-width: 90% !important;
+  min-width: 0 !important;
+  height: 90% !important;
+  max-height: 90% !important;
+  min-height: 0 !important;
+  border-radius: 18px !important;
+  margin: 0 !important;
+  padding: 14px 12px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+#readerPickerOverlay .popup-header,
+#surahPickerOverlay .popup-header{
+  flex: 0 0 auto !important;
+  margin-bottom: 12px !important;
+}
+#readerPickerOverlay .popup-header h2,
+#surahPickerOverlay .popup-header h2{
+  font-size: 22px !important;
+}
+#readerPickerOverlay .popup-list,
+#surahPickerOverlay .popup-list{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 4px 2px 20px !important;
+}
+#readerPickerOverlay .popup-item,
+#surahPickerOverlay .popup-item{
+  width: 100% !important;
+  margin-bottom: 10px !important;
+  padding: 16px 18px !important;
+  font-size: 18px !important;
+  min-height: 56px !important;
+  box-sizing: border-box !important;
+}

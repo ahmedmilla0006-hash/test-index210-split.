@@ -1,0 +1,1101 @@
+:root{
+  --green:#16803b;
+  --green-dark:#10672f;
+  --cream:#f5f0e7;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:var(--cream);
+  font-family:Tahoma,Arial,sans-serif;
+}
+
+.app{
+  width:100%;
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  background:var(--cream);
+}
+
+.reader{
+  position:relative;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  background:#fff;
+}
+
+.page-area{
+  width:100%;
+  height:100%;
+  overflow:auto;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  touch-action:pan-y;
+}
+
+.page{
+  height:100%;
+  width:auto;
+  max-width:100%;
+  object-fit:contain;
+  object-position:top center;
+  display:block;
+  user-select:none;
+  -webkit-user-drag:none;
+  pointer-events:none;
+  transform-origin:center top;
+  color-scheme:light;
+  forced-color-adjust:none;
+}
+
+/* المصحف يبقى واضحاً في الوضع الليلي ولا يتم تعتيم صورة الصفحة */
+.night-mode .page{
+  background:#fff;
+  filter:invert(1) hue-rotate(180deg);
+  mix-blend-mode:normal;
+  color-scheme:light;
+  forced-color-adjust:none;
+}
+
+.night-mode .page-area{
+  color-scheme:dark;
+}
+
+.night-mode .ayah-highlight-layer{
+  filter:invert(1) hue-rotate(180deg);
+}
+
+.menu-button{
+  position:absolute;
+  top:16px;
+  left:16px;
+  z-index:20;
+  width:56px;
+  height:56px;
+  border:0;
+  border-radius:50%;
+  background:var(--green);
+  color:#fff;
+  font-size:31px;
+  line-height:56px;
+  padding:0;
+  box-shadow:0 4px 12px #0004;
+  cursor:pointer;
+}
+
+.player{
+  flex:none;
+  width:100%;
+  background:#fff;
+  border-radius:24px 24px 0 0;
+  box-shadow:0 -5px 20px #0002;
+  padding:10px 16px 12px;
+  padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));
+  z-index:30;
+}
+
+.player-top{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  direction:rtl;
+}
+
+.reader-photo{
+  width:56px;
+  height:56px;
+  flex:none;
+  border-radius:50%;
+  background:#e9eee9;
+  border:2px solid var(--green);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+}
+
+.reader-data{
+  flex:1;
+  min-width:0;
+}
+
+.reader-row{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  white-space:nowrap;
+}
+
+.reader-label{
+  font-size:13px;
+  color:#666;
+}
+
+.reader-name{
+  color:var(--green);
+  font-size:15px;
+  font-weight:bold;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.readers-title{
+  margin-top:6px;
+  font-size:17px;
+  font-weight:bold;
+}
+
+.reader-select{
+  min-width:180px;
+  border:1px solid #d4cbb9;
+  border-radius:10px;
+  background:#fff;
+  padding:9px 8px;
+  font:inherit;
+}
+
+.progress-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:8px;
+  direction:rtl;
+}
+
+.progress{
+  flex:1;
+  height:8px;
+  appearance:none;
+  -webkit-appearance:none;
+  border-radius:10px;
+  background:#c8c8c8;
+  overflow:hidden;
+  cursor:pointer;
+  touch-action:none;
+}
+
+.progress::-webkit-progress-bar{
+  background:#c8c8c8;
+}
+
+.progress::-webkit-progress-value{
+  background:var(--green);
+}
+
+.progress::-moz-progress-bar{
+  background:var(--green);
+}
+
+.progress-time{
+  min-width:38px;
+  font-size:12px;
+  color:#555;
+  text-align:center;
+}
+
+.controls{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  direction:rtl;
+  margin-top:8px;
+}
+
+.control{
+  width:68px;
+  border:0;
+  background:transparent;
+  color:var(--green);
+  font-family:inherit;
+  cursor:pointer;
+}
+
+.control-icon{
+  height:35px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:26px;
+  font-weight:bold;
+}
+
+.control-text{
+  margin-top:1px;
+  color:#666;
+  font-size:12px;
+}
+
+.play-button{
+  width:58px;
+  height:58px;
+  border:0;
+  border-radius:50%;
+  background:var(--green);
+  color:#fff;
+  font-size:25px;
+  box-shadow:0 3px 8px #0003;
+  cursor:pointer;
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  z-index:80;
+  background:#0007;
+  display:none;
+}
+
+.overlay.show{
+  display:block;
+}
+
+.side-menu{
+  position:fixed;
+  top:0;
+  left:0;
+  width:min(76vw,520px);
+  height:100dvh;
+  z-index:100;
+  background:#202020;
+  padding:28px 26px 30px;
+  overflow-y:auto;
+  transform:translateX(-105%);
+  transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .28s ease, visibility .28s ease;
+  box-shadow:8px 0 25px #0007;
+  opacity:1;
+  visibility:visible;
+}
+
+.side-menu.open{
+  transform:translateX(0);
+  opacity:1;
+  visibility:visible;
+}
+
+.side-menu h2{
+  margin:14px 0 42px;
+  text-align:center;
+  color:var(--green);
+  font-size:29px;
+  font-weight:bold;
+}
+
+.menu-item{
+  display:block;
+  width:100%;
+  margin:0 0 16px;
+  padding:17px 22px;
+  min-height:70px;
+  border:0;
+  border-radius:16px;
+  background:var(--green);
+  color:#fff;
+  text-align:right;
+  font-family:inherit;
+  font-size:19px;
+  box-shadow:0 2px 4px #0003;
+  cursor:pointer;
+}
+
+.menu-item:active{
+  background:var(--green-dark);
+  transform:scale(.99);
+}
+
+.popup-overlay{
+  position:fixed;
+  inset:0;
+  z-index:200;
+  background:#0008;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+
+.popup-overlay.show{
+  display:flex;
+}
+
+.popup-box{
+  width:min(94vw,520px);
+  max-height:90vh;
+  background:#202020;
+  border-radius:22px;
+  padding:18px;
+  box-shadow:0 10px 40px #0009;
+  display:flex;
+  flex-direction:column;
+}
+
+.popup-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:15px;
+}
+
+.popup-header h2{
+  margin:0;
+  color:var(--green);
+  font-size:24px;
+}
+
+.popup-close{
+  width:42px;
+  height:42px;
+  border:0;
+  border-radius:50%;
+  background:var(--green);
+  color:#fff;
+  font-size:21px;
+  cursor:pointer;
+}
+
+.popup-list{
+  overflow-y:auto;
+  padding:3px;
+}
+
+.popup-item{
+  display:block;
+  width:100%;
+  border:0;
+  border-radius:13px;
+  background:var(--green);
+  color:#fff;
+  padding:14px 16px;
+  margin-bottom:9px;
+  font-family:inherit;
+  font-size:17px;
+  text-align:right;
+  cursor:pointer;
+}
+
+.popup-item:active{
+  background:var(--green-dark);
+}
+
+.popup-item small{
+  opacity:.8;
+}
+
+.night-mode .app,
+.night-mode .reader,
+.night-mode .page-area{
+  background:#202020;
+}
+
+.night-mode .player{
+  background:#202020;
+  color:#fff;
+}
+
+.night-mode .reader-label,
+.night-mode .control-text,
+.night-mode .progress-time{
+  color:#ccc;
+}
+
+.night-mode .reader-select{
+  background:#303030;
+  color:#fff;
+  border-color:#555;
+}
+
+
+.search-box{
+  width:min(94vw,560px);
+}
+.search-form{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+.search-input{
+  flex:1;
+  min-width:0;
+  border:1px solid #555;
+  border-radius:12px;
+  background:#303030;
+  color:#fff;
+  padding:13px 14px;
+  font:inherit;
+  font-size:17px;
+  outline:none;
+  direction:rtl;
+}
+.search-input:focus{
+  border-color:var(--green);
+}
+.search-submit{
+  width:58px;
+  border:0;
+  border-radius:12px;
+  background:var(--green);
+  color:#fff;
+  font-size:22px;
+  cursor:pointer;
+}
+.search-hint{
+  color:#bbb;
+  font-size:13px;
+  margin:0 0 10px;
+  line-height:1.7;
+}
+.search-status{
+  color:#bbb;
+  text-align:center;
+  padding:12px 4px;
+  font-size:14px;
+}
+.search-result{
+  text-align:right;
+  line-height:1.7;
+}
+.search-result-title{
+  font-weight:bold;
+}
+.search-result-meta{
+  display:block;
+  font-size:12px;
+  opacity:.8;
+  margin-top:2px;
+}
+.search-result-text{
+  display:block;
+  margin-top:6px;
+  font-size:14px;
+  line-height:2;
+}
+
+.about-box{
+  text-align:center;
+}
+.about-content{
+  color:#eee;
+  line-height:2.1;
+  font-size:17px;
+  padding:10px 8px 18px;
+}
+.about-name{
+  color:var(--green);
+  font-size:25px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+.about-developer{
+  font-size:18px;
+  margin-bottom:4px;
+}
+.about-copy{
+  color:#bbb;
+  font-size:14px;
+  margin-bottom:18px;
+}
+.about-dua{
+  color:#fff;
+  font-size:16px;
+  margin:4px 0;
+}
+
+@media(max-width:600px){
+
+  .side-menu{
+    width:76vw;
+    padding:24px 26px 28px;
+  }
+
+  .side-menu h2{
+    font-size:28px;
+    margin-bottom:40px;
+  }
+
+  .menu-item{
+    min-height:68px;
+    margin-bottom:16px;
+    padding:16px 20px;
+    font-size:18px;
+    border-radius:16px;
+  }
+
+  /* كلاسيكي: لا تكبير زائد للمستطيلات على الموبايل */
+  body.interface-old .side-menu{
+    width:min(78vw,300px) !important;
+    padding:18px 14px 20px !important;
+  }
+  body.interface-old .side-menu h2{
+    font-size:22px !important;
+    margin:6px 0 20px !important;
+  }
+  body.interface-old .menu-item{
+    min-height:48px !important;
+    margin:0 0 8px !important;
+    padding:12px 14px !important;
+    font-size:15px !important;
+    border-radius:14px !important;
+  }
+
+  .menu-button{
+    top:14px;
+    left:14px;
+  }
+
+  .player{
+    padding:9px 12px 10px;
+    padding-bottom:max(44px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .reader-select{
+    min-width:150px;
+    max-width:190px;
+  }
+
+  .reader-photo{
+    width:52px;
+    height:52px;
+  }
+
+  .control{
+    width:61px;
+  }
+
+  .control-icon{
+    font-size:24px;
+  }
+}
+
+/* === تلوين حروف الآية المقروءة فوق نفس صورة المصحف === */
+.page-area{position:relative;}
+.ayah-highlight-layer{
+  position:absolute;
+  pointer-events:none;
+  z-index:20;
+  display:none;
+  overflow:hidden;
+  margin:0;
+  padding:0;
+  border:0;
+  transform:none;
+  transform-origin:0 0;
+}
+
+/* ضبط تظليل الفاتحة وأول البقرة:
+   بيانات التوقيت لهاتين الصفحتين تأتي منخفضة قليلاً مقارنة
+   بمكان الكلمات في صورة المصحف، لذلك نرفع طبقة التظليل 18px. */
+.ayah-highlight-layer polygon,
+.ayah-highlight-layer rect{
+  fill:var(--ayah-highlight-fill,rgba(22,132,67,.50));
+  stroke:var(--ayah-highlight-stroke,rgba(22,132,67,.28));
+  stroke-width:.8;
+}
+
+
+/* === إعدادات التمييز === */
+.highlight-settings-list{display:flex;flex-direction:column;gap:10px;}
+.highlight-option{width:100%;border:1px solid #d4cbb9;border-radius:12px;background:#fff;padding:14px 12px;font:inherit;font-weight:700;text-align:right;cursor:pointer;}
+.highlight-option.active{outline:3px solid rgba(22,132,67,.22);border-color:#168443;}
+.night-mode .highlight-option{background:#303030;color:#fff;border-color:#555;}
+
+/* === اختيار القارئ والسورة أسفل المشغل === */
+.bottom-selection-area{
+  display:flex;
+  direction:rtl;
+  gap:10px;
+  width:100%;
+  margin-top:10px;
+}
+.bottom-selection-card{
+  flex:1 1 0;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.bottom-selection-label{
+  text-align:center;
+  color:#555;
+  font-size:13px;
+  font-weight:700;
+}
+.bottom-selection-card select{
+  width:100%;
+  min-width:0;
+  border:1px solid #d4cbb9;
+  border-radius:10px;
+  background:#fff;
+  padding:9px 8px;
+  font:inherit;
+}
+.night-mode .bottom-selection-label{color:#ccc;}
+.night-mode .bottom-selection-card select{
+  background:#303030;
+  color:#fff;
+  border-color:#555;
+}
+@media(max-width:600px){
+  .bottom-selection-area{gap:7px;margin-bottom:4px;}
+  .bottom-selection-label{font-size:12px;}
+  .bottom-selection-card select{padding:8px 6px;font-size:14px;}
+}
+
+/* === ألوان تمييز الآية === */
+.highlight-color-title{margin-top:4px;font-weight:800;text-align:right;color:#555;}
+.highlight-colors{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;direction:rtl;}
+.color-choice{width:100%;height:42px;border:2px solid #ddd;background:transparent;border-radius:10px;cursor:pointer;box-sizing:border-box;font-size:17px;font-weight:900;}
+.color-choice[data-color="#168443"]{color:#168443;}
+.color-choice[data-color="#eb5757"]{color:#eb5757;}
+.color-choice[data-color="#2f80ed"]{color:#2f80ed;}
+
+
+
+.color-choice.active{outline:3px solid rgba(22,132,67,.25);border-color:#168443;transform:scale(1.04);}
+.night-mode .highlight-color-title{color:#ddd;}
+.night-mode .color-choice{border-color:#555;}
+
+
+
+/* =====================================================
+   واجهة القراءة: إخفاء/إظهار عناصر التحكم مع تثبيت مواضعها
+   وصفحة المصحف ملء مساحة الشاشة أسفل شريط الحالة
+===================================================== */
+:root{
+  --reader-safe-top: env(safe-area-inset-top, 0px);
+  --reader-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+
+body{
+  padding:0;
+}
+
+.app{
+  width:100%;
+  height:100dvh;
+  min-height:100dvh;
+  padding-top:var(--reader-safe-top);
+  padding-bottom:0;
+  position:relative;
+  overflow:hidden;
+}
+
+.reader{
+  position:absolute;
+  inset:var(--reader-safe-top) 0 0 0;
+  width:100%;
+  height:calc(100dvh - var(--reader-safe-top));
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  background:#fff;
+}
+
+.page-area{
+  width:100%;
+  height:100%;
+  min-height:0;
+  overflow:auto;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  touch-action:pan-y;
+}
+
+.page{
+  height:100%;
+  max-height:100%;
+  width:auto;
+  max-width:100%;
+  object-fit:contain;
+  object-position:top center;
+}
+
+/*
+  المشغّل ثابت فوق صفحة المصحف (position:fixed)
+  ولا يقتطع مساحة من صورة الصفحة.
+  الحركة عند الإخفاء/الإظهار تعتمد على transform وليس display
+  حتى تبقى المواضع مستقرة ولا يحدث قفز في التخطيط.
+*/
+.player{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  width:100%;
+  max-height:50dvh;
+  overflow-y:auto;
+  z-index:30;
+  padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));
+  transform:translateY(0);
+  transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .28s ease, visibility .28s ease;
+  will-change:transform;
+}
+
+/* زر القائمة (☰): ينسدل للأعلى عند إخفاء الواجهة */
+.menu-button{
+  top:calc(16px + var(--reader-safe-top));
+  transform:translateY(0);
+  transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .28s ease, visibility .28s ease;
+  will-change:transform;
+}
+
+/*
+  class "ui-hidden" تُطبَّق من JS عند الضغط القصير على الصفحة.
+  - المشغّل: translateY(110%) → ينزل خارج الشاشة
+  - زر القائمة: translateY(-120%) → يصعد خارج الشاشة
+  لا نستخدم display:none حتى لا تتغير أبعاد الصفحة ورقم الصفحة.
+*/
+.player.ui-hidden{
+  transform:translateY(110%) !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+.menu-button.ui-hidden{
+  transform:translateY(-120%) !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+/* القائمة الجانبية تُخفى أفقياً إن لم تكن مفتوحة أثناء إخفاء الواجهة */
+.side-menu.ui-hidden{
+  transform:translateX(-105%) !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .28s ease, visibility .28s ease;
+}
+
+/* عند ظهور مشغل التلاوة نضع رقم الصفحة فوقه بمقدار ارتفاعه،
+   حتى يبقى رقم الصفحة مرئياً ولا يغطيه المشغل. */
+.reader-page-number{
+  bottom:calc(var(--player-height, 0px) + 6px);
+}
+
+.night-mode .reader-info-top{
+  background:rgba(35,35,35,.94);
+  color:#79d69a;
+  border-color:rgba(121,214,154,.25);
+}
+
+.night-mode .reader-page-number{
+  background:rgba(35,35,35,.94);
+  color:#eee;
+  border-color:rgba(255,255,255,.12);
+}
+
+@media(max-width:600px){
+  .reader-info-top{
+    top:calc(7px + var(--reader-safe-top));
+    padding:4px 10px;
+    font-size:12px;
+  }
+
+  .reader-page-number{
+    padding:3px 10px;
+    font-size:12px;
+  }
+}
+
+/* القائمة الجانبية أيضاً جزء من واجهة القراءة */
+.side-menu{
+  top:var(--reader-safe-top);
+  height:calc(100dvh - var(--reader-safe-top));
+}
+
+/* طبقة التعتيم تبقى فقط عند فتح القائمة */
+.overlay.show{
+  visibility:visible;
+}
+
+/* في الشاشات الصغيرة */
+@media(max-width:600px){
+  .menu-button{
+    top:calc(14px + var(--reader-safe-top));
+  }
+
+  .player{
+    padding-bottom:max(44px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+
+/* === تذييل الصفحة === */
+.mushaf-page-footer{
+  display:none !important;
+}
+
+
+
+
+/* === معلومات الجزء والسورة أعلى المصحف === */
+.reader-info-top{
+  position:absolute;
+  top:calc(7px + var(--reader-safe-top, 0px));
+  left:0;
+  transform:none;
+  z-index:15;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  min-width:0;width:100%;
+  padding:5px 14px;
+  border-radius:10px;
+  background:rgba(255,255,255,.94);
+  color:#16803b;
+  border:1px solid rgba(22,128,59,.18);
+  box-shadow:0 2px 8px #0001;
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:14px;
+  font-weight:700;
+  white-space:nowrap;
+  pointer-events:none;
+}
+.reader-info-top .sep{
+  color:#999;
+  font-weight:400;
+}
+
+
+.reader-page-number{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:calc(var(--player-height, 0px) + 8px);
+  z-index:50;
+  padding:4px 11px;
+  border-radius:9px;
+  background:rgba(255,255,255,.94);
+  color:#111;
+  border:1px solid rgba(0,0,0,.10);
+  box-shadow:0 2px 8px #0001;
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:13px;
+  font-weight:700;
+  pointer-events:none;
+  white-space:nowrap;
+  transition:bottom .32s cubic-bezier(.4,0,.2,1);
+}
+
+
+/* تذييل القائمة: رقم الإصدار فقط */
+.side-menu-footer{
+  margin-top:18px;
+  padding:14px 6px 10px;
+  text-align:center;
+  direction:rtl;
+  border-top:1px solid rgba(255,255,255,.12);
+}
+.side-menu-version{
+  color:rgba(220,230,240,.85);
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.3px;
+  margin-bottom:6px;
+  font-family:Tahoma,Arial,sans-serif;
+}
+body.interface-old .side-menu-footer{border-top:1px solid #444}
+body.interface-old .side-menu-version{color:#ccc}
+
+/* شريط الجزء والسورة — بعرض الصفحة، كل في جهة، تحت شريط الحالة مباشرة */
+.reader-info-top{
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  direction: rtl !important;
+  gap: 8px;
+  box-sizing: border-box !important;
+  padding: 8px 16px !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  border-radius: 0 !important;
+  z-index: 16 !important;
+  pointer-events: none !important;
+  background: rgba(255,255,255,.96) !important;
+}
+.night-mode .reader-info-top{
+  background: rgba(35,35,35,.96) !important;
+}
+.reader-info-top .sep{
+  display: none !important;
+}
+.reader-info-top #juzInfo,
+.reader-info-top #surahInfo{
+  flex: 0 1 auto;
+  text-align: start;
+}
+/* توسيط خفيف: مساحة بيضاء أعلى/أسفل مع رفع المصحف سطراً */
+.page-area{
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding-top: 36px !important;    /* أقل من قبل → النص أعلى */
+  padding-bottom: 44px !important; /* أسفل أكثر قليلاً ليبقى التوازن */
+  box-sizing: border-box;
+}
+.page{
+  height: auto !important;
+  max-height: calc(100% - 8px) !important;
+  width: auto !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  /* رفع بصري بمقدار سطر تقريباً */
+  transform: translateY(-12px);
+}
+@media (max-width: 600px){
+  .reader-info-top{
+    padding: 7px 14px !important;
+    font-size: 14px !important;
+  }
+  .page-area{
+    padding-top: 34px !important;
+    padding-bottom: 40px !important;
+  }
+  .page{
+    transform: translateY(-10px);
+  }
+}
+
+/* واجهة افتتاحية — أيقونة التطبيق بالإطار الذهبي */
+#splashScreen{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#000;
+  color:#fff;
+  transition:opacity .55s ease,visibility .55s ease;
+}
+#splashScreen.hide{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+  display:none !important;
+  z-index:-1 !important;
+}
+#splashScreen .splash-icon{
+  width:min(58vw,220px);
+  height:min(58vw,220px);
+  border-radius:50%;
+  overflow:hidden;
+  box-shadow:0 0 0 3px rgba(212,175,55,.35),0 16px 48px rgba(0,0,0,.55);
+  animation:splashPop .6s cubic-bezier(.2,.9,.3,1) both;
+  background:#000;
+}
+#splashScreen .splash-icon img{
+  width:100%;height:100%;display:block;object-fit:cover;
+}
+#splashScreen .splash-title{
+  margin-top:22px;font-size:30px;font-weight:800;color:#f0d78c;
+  letter-spacing:.5px;
+  animation:splashFade .5s ease .15s both;
+}
+#splashScreen .splash-sub{
+  margin-top:6px;font-size:14px;color:rgba(255,255,255,.7);
+  animation:splashFade .5s ease .25s both;
+}
+#splashScreen .splash-loader{
+  margin-top:28px;width:28px;height:28px;
+  border:3px solid rgba(212,175,55,.25);
+  border-top-color:#d4af37;border-radius:50%;
+  animation:splashSpin .75s linear infinite;
+}
+@keyframes splashSpin{to{transform:rotate(360deg)}}
+@keyframes splashPop{
+  from{transform:scale(.7);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+@keyframes splashFade{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+
+
+
+.play-button.is-loading{
+  opacity:1;
+  pointer-events:none;
+  position:relative;
+  font-size:0 !important;
+  color:transparent !important;
+  overflow:visible;
+}
+/*
+  نقاط على قوس غير مكتمل تدور
+  (8 نقاط تتلاشى تدريجياً → إحساس بالدوران غير المكتمل)
+*/
+.play-button.is-loading::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:26px;
+  height:26px;
+  margin:-13px 0 0 -13px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle closest-side, #fff 92%, transparent 100%) 50% 0 / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.85) 92%, transparent 100%) 85% 15% / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.7) 92%, transparent 100%) 100% 50% / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.55) 92%, transparent 100%) 85% 85% / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.4) 92%, transparent 100%) 50% 100% / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.28) 92%, transparent 100%) 15% 85% / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.16) 92%, transparent 100%) 0 50% / 5px 5px no-repeat,
+    radial-gradient(circle closest-side, rgba(255,255,255,.08) 92%, transparent 100%) 15% 15% / 5px 5px no-repeat;
+  animation: ayaArcDotsSpin .75s linear infinite;
+}
+@keyframes ayaArcDotsSpin{
+  to{ transform: rotate(360deg); }
+}
+  20%{
+    box-shadow:
+      -10px 0 0 #fff,
+       0px 0 0 rgba(255,255,255,.25),
+      10px 0 0 rgba(255,255,255,.25);
+  }
+  40%{
+    box-shadow:
+      -10px 0 0 rgba(255,255,255,.25),
+       0px 0 0 #fff,
+      10px 0 0 rgba(255,255,255,.25);
+  }
+  60%{
+    box-shadow:
+      -10px 0 0 rgba(255,255,255,.25),
+       0px 0 0 rgba(255,255,255,.25),
+      10px 0 0 #fff;
+  }
+}
+}

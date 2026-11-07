@@ -1,0 +1,66 @@
+* { scrollbar-width: thin; scrollbar-color: rgba(125, 222, 168, 0.45) rgba(28, 42, 56, 0.35); }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: rgba(28, 42, 56, 0.25); border-radius: 10px; }
+*::-webkit-scrollbar-thumb { background: rgba(125, 222, 168, 0.40); border-radius: 10px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(125, 222, 168, 0.65); }
+body.interface-old * { scrollbar-color: rgba(22, 128, 59, 0.55) rgba(0, 0, 0, 0.15); }
+body.interface-old *::-webkit-scrollbar-thumb { background: rgba(22, 128, 59, 0.50); }
+body.interface-old *::-webkit-scrollbar-thumb:hover { background: rgba(22, 128, 59, 0.75); }
+body.interface-old *::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.12); }
+
+/* أوفلاين: شريط التمرير + شريط تقدّم التلاوة أزرق واضح */
+body.is-offline *,
+body.is-offline {
+  scrollbar-color: #2f80ed rgba(20, 35, 60, 0.40) !important;
+}
+body.is-offline *::-webkit-scrollbar-track {
+  background: rgba(20, 35, 60, 0.35) !important;
+  border-radius: 10px;
+}
+body.is-offline *::-webkit-scrollbar-thumb {
+  background: #2f80ed !important;
+  border-radius: 10px;
+}
+body.is-offline *::-webkit-scrollbar-thumb:hover {
+  background: #1c6dd0 !important;
+}
+body.interface-old.is-offline * {
+  scrollbar-color: #2f80ed rgba(0, 0, 0, 0.18) !important;
+}
+body.interface-old.is-offline *::-webkit-scrollbar-thumb {
+  background: #2f80ed !important;
+}
+body.interface-old.is-offline *::-webkit-scrollbar-thumb:hover {
+  background: #1c6dd0 !important;
+}
+body.interface-old.is-offline *::-webkit-scrollbar-track {
+  background: rgba(15, 30, 55, 0.20) !important;
+}
+
+/* شريط تقدّم الصوت — أزرق عند الأوفلاين */
+body.is-offline .progress,
+body.is-offline .player .progress,
+body.is-offline .lop-progress {
+  background: rgba(20, 40, 80, 0.45) !important;
+}
+body.is-offline .progress::-webkit-progress-bar,
+body.is-offline .player .progress::-webkit-progress-bar,
+body.is-offline .lop-progress::-webkit-progress-bar {
+  background: rgba(20, 40, 80, 0.45) !important;
+}
+body.is-offline .progress::-webkit-progress-value,
+body.is-offline .player .progress::-webkit-progress-value,
+body.is-offline .lop-progress::-webkit-progress-value {
+  background: #2f80ed !important;
+}
+body.is-offline .progress::-moz-progress-bar,
+body.is-offline .player .progress::-moz-progress-bar,
+body.is-offline .lop-progress::-moz-progress-bar {
+  background: #2f80ed !important;
+}
+/* بعض المتصفحات ترسم progress عبر accent-color */
+body.is-offline .progress,
+body.is-offline .player .progress,
+body.is-offline .lop-progress {
+  accent-color: #2f80ed !important;
+}

@@ -1,0 +1,19 @@
+.download-picker-overlay{z-index:999999 !important;pointer-events:none !important;}
+.download-picker-overlay.show{pointer-events:auto !important;}
+.download-picker-box{pointer-events:auto !important;}
+#downloadsPopup .download-glass-picker{position:relative !important;z-index:20 !important;pointer-events:auto !important;}
+/* في قائمة تنزيل الملحقات: السماح بالسحب العمودي الحقيقي، وعدم اعتبار السحب ضغطة */
+#downloadsPopup .download-picker-list{
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  touch-action:pan-y !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+}
+#downloadsPopup .download-picker-item{
+  touch-action:pan-y !important;
+  -webkit-user-select:none !important;
+  user-select:none !important;
+}

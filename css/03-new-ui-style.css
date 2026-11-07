@@ -1,0 +1,887 @@
+/* =========================================================
+   أزرار التحكم + القائمة الجانبية — تصميم زجاجي جديد
+   فوق التصميم القديم — المصحف ملء الشاشة دائماً
+========================================================= */
+html, body, .app, .reader, .page-area {
+  background-color: transparent !important;
+}
+html, body {
+  background-color: #0a1620 !important;
+}
+body {
+  background-image:
+    linear-gradient(rgba(3,10,16,.30), rgba(3,10,16,.50)),
+    url("https://storage.radiosarajevo.ba/image/795011/1180x732/dzamija-u-medini-3juni24-aa-6.jpg") !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-attachment: fixed !important;
+}
+.app {
+  background: transparent !important;
+}
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(5,14,22,.18), rgba(4,12,19,.38));
+  pointer-events: none;
+}
+
+/* شريط الجزء/السورة */
+.reader-info-top {
+  background: rgba(28,42,56,.72) !important;
+  border: 1px solid rgba(200,220,235,.16) !important;
+  color: #eef3f6 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 12px !important;
+  z-index: 40 !important;
+}
+.reader-page-number {
+  background: rgba(28,42,56,.72) !important;
+  color: #fff !important;
+  border: 1px solid rgba(200,220,235,.14) !important;
+  border-radius: 10px !important;
+  z-index: 50 !important;
+  /* يبقى فوق المحتوى وتحت أزرار القوائم المنبثقة */
+  pointer-events: none;
+}
+
+/* زر القائمة — زجاجي */
+.menu-button {
+  position: fixed !important;
+  top: calc(14px + var(--reader-safe-top, 0px)) !important;
+  left: 14px !important;
+  z-index: 50 !important;
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 16px !important;
+  background: rgba(28,42,56,.55) !important;
+  border: 1px solid rgba(200,220,235,.20) !important;
+  color: #f4f7f9 !important;
+  font-size: 26px !important;
+  line-height: 52px !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+  transition: transform .32s ease, opacity .28s ease, visibility .28s ease !important;
+}
+.menu-button.ui-hidden {
+  transform: translateY(-140%) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* المشغّل — زجاج شفاف فوق المصحف */
+.player {
+  position: fixed !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: calc(12px + var(--reader-safe-bottom, 0px)) !important;
+  width: auto !important;
+  max-height: 42dvh !important;
+  overflow-y: auto !important;
+  z-index: 45 !important;
+  padding: 12px 14px !important;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(200,220,235,.20) !important;
+  /* خلفية صلبة ثابتة على كل الأجهزة — بدون شفافية أو blur */
+  background: #1c2a38 !important;
+  background-color: #1c2a38 !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #f4f7f9 !important;
+  transform: translateY(0) !important;
+  transition: transform .32s ease, opacity .28s ease, visibility .28s ease !important;
+  isolation: isolate !important;
+  opacity: 1 !important;
+}
+.player.ui-hidden {
+  transform: translateY(120%) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.player .reader-label,
+.player .control-text,
+.player .progress-time,
+.player .bottom-selection-label,
+.player .readers-title {
+  color: rgba(230,238,244,.80) !important;
+}
+.player .reader-name {
+  color: #7ddea8 !important;
+}
+.player .reader-select,
+.player .bottom-selection-card select {
+  background: #374858 !important;
+  background-color: #374858 !important;
+  color: #f4f7f9 !important;
+  border-color: rgba(200,220,235,.16) !important;
+}
+.player .progress {
+  background: rgba(15,25,35,.45) !important;
+}
+.player .progress::-webkit-progress-value {
+  background: #50c878 !important;
+}
+.player .progress::-moz-progress-bar {
+  background: #50c878 !important;
+}
+.player .play-button {
+  background: #50c878 !important;
+  color: #0a2018 !important;
+  box-shadow: 0 4px 14px rgba(80,200,120,.40) !important;
+}
+.player .control {
+  color: #7ddea8 !important;
+}
+
+/* مظهر زر الانتقال التلقائي للسورة التالية حسب حالته */
+.player #autoNextSurahButton.auto-next-enabled .control-icon{
+  color:#7ddea8 !important;
+  font-size:29px !important;
+  font-weight:900 !important;
+}
+.player #autoNextSurahButton.auto-next-disabled .control-icon{
+  color:#ff9f1c !important;
+  font-size:27px !important;
+}
+.player #autoNextSurahButton.auto-next-enabled .control-text{
+  color:#7ddea8 !important;
+  font-weight:800 !important;
+}
+.player #autoNextSurahButton.auto-next-disabled .control-text{
+  color:#ffb34d !important;
+  font-weight:700 !important;
+}
+.player .reader-photo {
+  background: rgba(55,72,88,.40) !important;
+  border-color: rgba(125,222,168,.45) !important;
+}
+
+/* القائمة الجانبية — زجاج شفاف */
+.side-menu {
+  top: calc(8px + var(--reader-safe-top, 0px)) !important;
+  left: 8px !important;
+  width: min(78vw, 300px) !important;
+  height: calc(100dvh - 16px - var(--reader-safe-top, 0px)) !important;
+  padding: 18px 14px 20px !important;
+  border-radius: 20px !important;
+  background: rgba(28,42,56,.52) !important;
+  border: 1px solid rgba(200,220,235,.22) !important;
+  box-shadow: 14px 0 40px rgba(0,0,0,.40), inset -1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter: blur(18px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(135%) !important;
+  z-index: 100 !important;
+}
+.side-menu h2 {
+  margin: 6px 0 20px !important;
+  padding-bottom: 12px !important;
+  color: #fff !important;
+  font-size: 22px !important;
+  border-bottom: 1px solid rgba(255,255,255,.14) !important;
+  background: transparent !important;
+}
+.menu-item {
+  min-height: 48px !important;
+  margin: 0 0 8px !important;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+  background: rgba(55,72,88,.40) !important;
+  border: 1px solid rgba(200,220,235,.12) !important;
+  color: #f4f7f9 !important;
+  font-size: 15px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+.menu-item:active {
+  background: rgba(70,92,110,.55) !important;
+  transform: scale(.99);
+}
+.overlay {
+  background: rgba(0,0,0,.20) !important;
+  backdrop-filter: none !important;
+}
+
+/* الوضع الليلي يبقى متوافقاً */
+.night-mode .player {
+  background: #141e28 !important;
+  background-color: #141e28 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #f4f7f9 !important;
+  opacity: 1 !important;
+}
+.night-mode .side-menu {
+  background: rgba(20,30,40,.65) !important;
+}
+
+@media (max-width: 600px) {
+  .menu-button {
+    top: calc(12px + var(--reader-safe-top, 0px)) !important;
+    left: 10px !important;
+    width: 48px !important;
+    height: 48px !important;
+    line-height: 48px !important;
+    font-size: 24px !important;
+  }
+  .player {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(8px + var(--reader-safe-bottom, 0px)) !important;
+    padding: 10px 12px !important;
+    max-height: 40dvh !important;
+  }
+  .side-menu {
+    width: min(82vw, 300px) !important;
+    left: 6px !important;
+  }
+}
+
+/* =========================================================
+   كل القوائم والنوافذ المنبثقة — نفس الأسلوب الزجاجي
+   بدون ضبابية للخلفية عند فتح النافذة.
+   الزجاج يكون على النافذة نفسها فقط، بينما المصحف خلفها يبقى واضحاً.
+========================================================= */
+.popup-overlay{
+  background: rgba(0,0,0,.28) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 14px !important;
+}
+.popup-box{
+  width: min(94vw, 360px) !important;
+  max-height: 86dvh !important;
+  padding: 16px 14px 18px !important;
+  border-radius: 20px !important;
+  background: rgba(28,42,56,.58) !important;
+  border: 1px solid rgba(200,220,235,.22) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter: blur(18px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(135%) !important;
+  color: #f4f7f9 !important;
+}
+.popup-header{
+  margin-bottom: 14px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+}
+.popup-header h2{
+  color: #fff !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+}
+.popup-close{
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  background: rgba(55,72,88,.50) !important;
+  border: 1px solid rgba(200,220,235,.16) !important;
+  color: #f4f7f9 !important;
+  font-size: 20px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+.popup-close:active{
+  background: rgba(70,92,110,.60) !important;
+  transform: scale(.97);
+}
+.popup-list{
+  padding: 2px 0 !important;
+}
+.popup-item{
+  display: block !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  margin: 0 0 8px !important;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+  background: rgba(55,72,88,.42) !important;
+  border: 1px solid rgba(200,220,235,.14) !important;
+  color: #f4f7f9 !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05) !important;
+  transition: background .15s ease, transform .12s ease !important;
+}
+.popup-item:last-child{
+  margin-bottom: 0 !important;
+}
+.popup-item:active{
+  background: rgba(70,92,110,.58) !important;
+  transform: scale(.99) !important;
+}
+.popup-item small{
+  opacity: .78 !important;
+  font-weight: 500 !important;
+  color: rgba(230,238,244,.85) !important;
+}
+.popup-item.search-result{
+  line-height: 1.65 !important;
+}
+.search-result-title{
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+.search-result-meta{
+  color: rgba(200,220,235,.75) !important;
+}
+.search-result-text{
+  color: rgba(230,238,244,.90) !important;
+}
+.search-hint,
+.search-status{
+  color: rgba(220,230,240,.80) !important;
+}
+.search-input{
+  background: rgba(55,72,88,.45) !important;
+  color: #f4f7f9 !important;
+  border: 1px solid rgba(200,220,235,.18) !important;
+  border-radius: 12px !important;
+}
+.search-input:focus{
+  border-color: rgba(125,222,168,.55) !important;
+}
+.search-submit{
+  background: rgba(80,200,120,.85) !important;
+  color: #0a2018 !important;
+  border-radius: 12px !important;
+  border: 0 !important;
+}
+.highlight-option{
+  background: rgba(55,72,88,.42) !important;
+  border: 1px solid rgba(200,220,235,.14) !important;
+  color: #f4f7f9 !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+.highlight-option.active{
+  outline: 2px solid rgba(125,222,168,.45) !important;
+  border-color: rgba(125,222,168,.40) !important;
+}
+.highlight-color-title{
+  color: rgba(230,238,244,.85) !important;
+}
+.color-choice{
+  border-color: rgba(200,220,235,.20) !important;
+  background: rgba(55,72,88,.35) !important;
+  border-radius: 12px !important;
+}
+.color-choice.active{
+  outline: 2px solid rgba(125,222,168,.45) !important;
+  border-color: rgba(125,222,168,.40) !important;
+}
+.about-content,
+.about-developer,
+.about-dua{
+  color: rgba(235,242,248,.92) !important;
+}
+.about-name{
+  color: #7ddea8 !important;
+}
+.about-copy{
+  color: rgba(200,220,235,.70) !important;
+}
+#downloadsPopup .popup-item{
+  background: rgba(55,72,88,.42) !important;
+  border: 1px solid rgba(200,220,235,.14) !important;
+  color: #f4f7f9 !important;
+}
+#dlStatus{
+  color: rgba(220,230,240,.85) !important;
+}
+#dlProgress{
+  background: rgba(15,25,35,.45) !important;
+  border-radius: 10px !important;
+}
+#dlReciterSelect,
+#dlStartSurah,
+#dlEndSurah{
+  width:100% !important;
+  min-width:0 !important;
+  height:52px !important;
+  box-sizing:border-box !important;
+  padding:10px 14px !important;
+  margin-top:6px !important;
+  border:1px solid rgba(200,220,235,.16) !important;
+  border-radius:12px !important;
+  background:rgba(55,72,88,.45) !important;
+  color:#f4f7f9 !important;
+  font:inherit !important;
+  font-size:15px !important;
+  font-weight:600 !important;
+  direction:rtl !important;
+  text-align:right !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+#dlReciterSelect:focus,
+#dlStartSurah:focus,
+#dlEndSurah:focus{
+  outline:none !important;
+  border-color:rgba(125,222,168,.45) !important;
+  box-shadow:0 0 0 2px rgba(125,222,168,.12), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+body.interface-new #downloadsPopup label{
+  color:rgba(235,242,248,.92) !important;
+}
+body.interface-new #downloadsPopup .search-hint{
+  color:rgba(200,220,235,.78) !important;
+}
+
+/* اختيارات تنزيل التلاوات — أزرار زجاجية وقوائم زجاجية مخصصة بدل قائمة النظام */
+#downloadsPopup .download-native-select{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  inset:auto !important;
+}
+#downloadsPopup .download-glass-picker{
+  width:100%;
+  min-width:0;
+  height:52px;
+  margin-top:6px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 14px;
+  border:1px solid rgba(200,220,235,.16);
+  border-radius:12px;
+  background:rgba(55,72,88,.45);
+  color:#f4f7f9;
+  font:inherit;
+  font-size:15px;
+  font-weight:600;
+  direction:rtl;
+  text-align:right;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  cursor:pointer;
+}
+#downloadsPopup .download-glass-picker:active{
+  background:rgba(70,92,110,.55);
+  transform:scale(.995);
+}
+#downloadsPopup .download-glass-picker-label{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#downloadsPopup .download-glass-chevron{
+  flex:none;
+  opacity:.75;
+  font-size:13px;
+}
+.download-picker-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:320 !important;
+  display:none !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:12px !important;
+  background:rgba(0,0,0,.28) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.download-picker-overlay.show{
+  display:flex !important;
+}
+.download-picker-box{
+  width:min(96vw,560px);
+  max-height:88dvh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:14px;
+  border-radius:20px;
+  background:rgba(28,42,56,.58);
+  border:1px solid rgba(200,220,235,.22);
+  box-shadow:0 16px 48px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter:blur(18px) saturate(135%);
+  -webkit-backdrop-filter:blur(18px) saturate(135%);
+  color:#f4f7f9;
+}
+.download-picker-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex:none;
+  margin-bottom:10px;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.download-picker-header h3{
+  margin:0;
+  color:#fff;
+  font-size:20px;
+  font-weight:800;
+}
+.download-picker-close{
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  border:1px solid rgba(200,220,235,.16);
+  background:rgba(55,72,88,.50);
+  color:#f4f7f9;
+  font-size:20px;
+  cursor:pointer;
+}
+.download-picker-list{
+  overflow-y:auto;
+  min-height:0;
+  padding:2px;
+  -webkit-overflow-scrolling:touch;
+}
+.download-picker-item{
+  width:100%;
+  min-height:52px;
+  margin:0 0 8px;
+  padding:11px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-radius:14px;
+  border:1px solid rgba(200,220,235,.14);
+  background:rgba(55,72,88,.42);
+  color:#f4f7f9;
+  font:inherit;
+  font-size:15px;
+  font-weight:600;
+  text-align:right;
+  direction:rtl;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  cursor:pointer;
+}
+.download-picker-item:last-child{margin-bottom:0}
+.download-picker-item:active{
+  background:rgba(70,92,110,.58);
+  transform:scale(.99);
+}
+.download-picker-item.selected{
+  outline:2px solid rgba(125,222,168,.45);
+  border-color:rgba(125,222,168,.40);
+  background:rgba(80,200,120,.22);
+}
+.download-picker-radio{
+  width:18px;
+  height:18px;
+  flex:none;
+  border-radius:50%;
+  border:2px solid rgba(230,238,244,.82);
+  position:relative;
+}
+.download-picker-item.selected .download-picker-radio{
+  border-color:#a8ffc5;
+}
+.download-picker-item.selected .download-picker-radio::after{
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:50%;
+  background:#7ddea8;
+}
+@media(max-width:600px){
+  .download-picker-box{width:min(96vw,560px);max-height:90dvh;padding:12px;border-radius:18px}
+  .download-picker-item{min-height:52px;font-size:15px;padding:11px 12px}
+  .download-picker-header h3{font-size:18px}
+}
+.player .reader-select,
+.bottom-selection-card select{
+  background: rgba(55,72,88,.45) !important;
+  color: #f4f7f9 !important;
+  border: 1px solid rgba(200,220,235,.16) !important;
+  border-radius: 12px !important;
+}
+@media (max-width: 600px) {
+  /* لا تطبّق حد 340px على قوائم القارئ/السورة */
+  .popup-box{
+    width: min(96vw, 340px) !important;
+    padding: 14px 12px 16px !important;
+    border-radius: 18px !important;
+  }
+  #readerPickerOverlay .popup-box,
+  #surahPickerOverlay .popup-box{
+    width: 90% !important;
+    max-width: 90% !important;
+    min-width: 0 !important;
+    height: 90% !important;
+    max-height: 90% !important;
+    min-height: 0 !important;
+    border-radius: 18px !important;
+    margin: 0 !important;
+    padding: 14px 12px 16px !important;
+  }
+  .popup-item{
+    min-height: 46px !important;
+    font-size: 14.5px !important;
+    padding: 11px 12px !important;
+  }
+  #readerPickerOverlay .popup-item,
+  #surahPickerOverlay .popup-item{
+    min-height: 54px !important;
+    font-size: 17px !important;
+    padding: 15px 16px !important;
+  }
+  .popup-header h2{
+    font-size: 18px !important;
+  }
+  #readerPickerOverlay .popup-header h2,
+  #surahPickerOverlay .popup-header h2{
+    font-size: 22px !important;
+  }
+}
+
+
+
+/* نوافذ اختيار القارئ والسورة — ملء الشاشة تقريباً */
+.popup-overlay.picker-fullscreen{
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+.popup-overlay.picker-fullscreen .popup-box{
+  width: 90% !important;
+  max-width: 90% !important;
+  height: 90% !important;
+  max-height: 90% !important;
+  min-height: 0 !important;
+  border-radius: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.popup-overlay.picker-fullscreen .popup-header{
+  flex: none !important;
+}
+.popup-overlay.picker-fullscreen .popup-list{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 4px 2px 12px !important;
+}
+.popup-overlay.picker-fullscreen .popup-item{
+  margin-bottom: 8px !important;
+}
+
+.glass-picker-btn{
+  width:100%;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border:1px solid rgba(200,220,235,.16) !important;
+  border-radius:12px !important;
+  background:rgba(55,72,88,.45) !important;
+  color:#f4f7f9 !important;
+  padding:10px 12px !important;
+  font:inherit;
+  font-size:14px !important;
+  font-weight:600 !important;
+  text-align:right;
+  cursor:pointer;
+  direction:rtl;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.glass-picker-btn:active{
+  background:rgba(70,92,110,.55) !important;
+  transform:scale(.99);
+}
+.glass-picker-btn #readerPickerLabel,
+.glass-picker-btn #surahPickerLabel{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.glass-picker-chevron{
+  opacity:.7;
+  font-size:12px;
+  flex:none;
+}
+.popup-item.glass-selected{
+  outline:2px solid rgba(125,222,168,.45) !important;
+  border-color:rgba(125,222,168,.40) !important;
+  background:rgba(80,200,120,.22) !important;
+}
+
+
+/* تنزيل الملحقات: إبقاء شريط الحالة وأزرار إيقاف/مسح التنزيلات ظاهرة في تبويب التلاوات أيضاً */
+#downloadsPopup .popup-box{
+  overflow:hidden !important;
+}
+#downloadsPopup .downloads-scroll-area{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding:0 2px 4px 0 !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-width:thin !important;
+}
+#downloadsPopup .downloads-actions{
+  flex:0 0 auto !important;
+  position:relative !important;
+  z-index:5 !important;
+  padding-top:2px !important;
+}
+
+/* الوضع الكلاسيكي: إرجاع خانات تنزيل الملحقات الأصلية الداكنة مثل الصورة الأولى */
+body.interface-old #downloadsPopup .download-glass-picker{
+  display:none !important;
+}
+body.interface-old #downloadsPopup .download-native-select{
+  position:static !important;
+  display:block !important;
+  width:100% !important;
+  height:52px !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  margin-top:6px !important;
+  padding:10px 14px !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  border:1px solid #4b4c52 !important;
+  border-radius:12px !important;
+  background:#303136 !important;
+  color:#f5f5f5 !important;
+  -webkit-appearance:auto !important;
+  appearance:auto !important;
+  font:inherit !important;
+  font-size:15px !important;
+  font-weight:600 !important;
+  direction:rtl !important;
+  text-align:right !important;
+  box-shadow:none !important;
+}
+body.interface-old #downloadsPopup .download-native-select:focus{
+  outline:none !important;
+  border-color:#666870 !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.05) !important;
+}
+/* الكلاسيكي: نفس قوائم الاختيار الداكنة مثل الصورة الأولى، وليس قائمة Android البيضاء */
+body.interface-old #downloadsPopup .download-glass-picker{
+  display:flex !important;
+  position:relative !important;
+  width:100% !important;
+  height:52px !important;
+  box-sizing:border-box !important;
+  margin-top:6px !important;
+  padding:10px 14px !important;
+  border:1px solid #4b4c52 !important;
+  border-radius:12px !important;
+  background:#303136 !important;
+  color:#f5f5f5 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.interface-old #downloadsPopup .download-native-select{
+  display:none !important;
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+body.interface-old .download-picker-overlay{
+  display:none !important;
+  align-items:stretch !important;
+  justify-content:stretch !important;
+  padding:0 !important;
+  background:rgba(0,0,0,.58) !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+body.interface-old .download-picker-overlay.show{
+  display:flex !important;
+}
+body.interface-old .download-picker-box{
+  width:100% !important;
+  max-width:none !important;
+  height:100% !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:#25262a !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  color:#f4f4f4 !important;
+}
+body.interface-old .download-picker-header{
+  min-height:74px !important;
+  margin:0 !important;
+  padding:0 18px !important;
+  border-bottom:1px solid #424348 !important;
+  background:#25262a !important;
+}
+body.interface-old .download-picker-header h3{
+  margin:0 !important;
+  color:#f4f4f4 !important;
+  font-size:22px !important;
+  font-weight:700 !important;
+}
+body.interface-old .download-picker-close{
+  width:44px !important;
+  height:44px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:#303136 !important;
+  color:#f4f4f4 !important;
+  font-size:26px !important;
+}
+body.interface-old .download-picker-list{
+  padding:0 !important;
+  overflow-y:auto !important;
+  background:#25262a !important;
+}
+body.interface-old .download-picker-item{
+  width:100% !important;
+  min-height:74px !important;
+  margin:0 !important;
+  padding:0 22px !important;
+  box-sizing:border-box !important;
+  border:0 !important;
+  border-bottom:1px solid #424348 !important;
+  border-radius:0 !important;
+  background:#25262a !important;
+  color:#f0f0f2 !important;
+  box-shadow:none !important;
+  font-size:21px !important;
+  font-weight:500 !important;
+}
+body.interface-old .download-picker-item:active{
+  background:#303136 !important;
+  transform:none !important;
+}
+body.interface-old .download-picker-item.selected{
+  outline:none !important;
+  border-color:#424348 !important;
+  background:#25262a !important;
+}
+body.interface-old .download-picker-radio{
+  width:24px !important;
+  height:24px !important;
+  border:2px solid #c7c9d2 !important;
+  margin-left:0 !important;
+}
+body.interface-old .download-picker-item.selected .download-picker-radio{
+  border-color:#aabaff !important;
+}
+body.interface-old .download-picker-item.selected .download-picker-radio::after{
+  background:#aabaff !important;
+}
