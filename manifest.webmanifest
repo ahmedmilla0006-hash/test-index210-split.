@@ -1,0 +1,18 @@
+{
+  "name": "آية — القرآن الكريم",
+  "short_name": "آية",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f0e7",
+  "theme_color": "#16803b",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "https://www.mp3quran.net/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

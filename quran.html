@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+<title>القرآن الكريم</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100%;
+  background:#eee9dc;
+  font-family:Tahoma,Arial,sans-serif;
+  overflow-x:hidden;
+}
+
+body.dark{
+  background:#111;
+}
+
+/* زر القائمة */
+
+.menu-button{
+  position:fixed;
+  top:12px;
+  left:12px;
+  width:46px;
+  height:46px;
+  border:0;
+  border-radius:50%;
+  background:rgba(20,107,47,.95);
+  color:#fff;
+  font-size:25px;
+  line-height:46px;
+  text-align:center;
+  z-index:100;
+  box-shadow:0 3px 10px rgba(0,0,0,.3);
+  cursor:pointer;
+}
+
+/* منطقة القراءة */
+
+.reader{
+  width:100%;
+  min-height:100vh;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:0;
+}
+
+/* صفحة المصحف */
+
+.page-wrapper{
+  width:100%;
+  max-width:900px;
+  min-height:100vh;
+  overflow:hidden;
+  background:#fff;
+  touch-action:pan-y;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  box-shadow:0 0 18px rgba(0,0,0,.18);
+}
+
+.page{
+  display:block;
+  width:100%;
+  height:auto;
+  margin:0 auto;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+/* التحميل */
+
+.loading{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:#555;
+  font-size:17px;
+  padding:30px;
+}
+
+body.dark .loading{
+  color:#ddd;
+}
+
+/* القائمة الجانبية */
+
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  opacity:0;
+  visibility:hidden;
+  transition:.25s;
+  z-index:110;
+}
+
+.overlay.show{
+  opacity:1;
+  visibility:visible;
+}
+
+.side-menu{
+  position:fixed;
+  top:0;
+  left:-320px;
+  width:300px;
+  max-width:85vw;
+  height:100vh;
+  background:#fff;
+  color:#222;
+  z-index:120;
+  transition:left .25s ease;
+  box-shadow:5px 0 20px rgba(0,0,0,.3);
+  overflow-y:auto;
+  padding:20px 15px;
+}
+
+.side-menu.open{
+  left:0;
+}
+
+body.dark .side-menu{
+  background:#202020;
+  color:#eee;
+}
+
+.menu-title{
+  text-align:center;
+  color:#146b2f;
+  font-size:22px;
+  font-weight:bold;
+  margin:8px 0 22px;
+}
+
+.menu-item{
+  width:100%;
+  border:0;
+  border-radius:10px;
+  padding:13px 15px;
+  margin:5px 0;
+  background:#146b2f;
+  color:#fff;
+  font-size:15px;
+  text-align:right;
+  cursor:pointer;
+}
+
+.menu-item.close{
+  background:#555;
+  margin-top:18px;
+}
+
+/* الهاتف */
+
+@media(max-width:600px){
+
+  .menu-button{
+    top:10px;
+    left:10px;
+    width:43px;
+    height:43px;
+    line-height:43px;
+    font-size:23px;
+  }
+
+  .page-wrapper{
+    min-height:100vh;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- زر القائمة الوحيد الظاهر أثناء القراءة -->
+
+<button
+  class="menu-button"
+  onclick="openMenu()"
+  aria-label="القائمة">
+  ☰
+</button>
+
+
+<!-- المصحف -->
+
+<main class="reader">
+
+  <div
+    class="page-wrapper"
+    id="pageWrapper">
+
+    <div
+      class="loading"
+      id="loading">
+      جاري تحميل صفحة المصحف...
+    </div>
+
+    <img
+      id="quranPage"
+      class="page"
+      alt="صفحة المصحف"
+      draggable="false"
+      style="display:none;">
+
+  </div>
+
+</main>
+
+
+<!-- الخلفية -->
+
+<div
+  class="overlay"
+  id="overlay"
+  onclick="closeMenu()">
+</div>
+
+
+<!-- القائمة -->
+
+<aside
+  class="side-menu"
+  id="sideMenu">
+
+  <div class="menu-title">
+    القرآن الكريم
+  </div>
+
+  <button
+    class="menu-item"
+    onclick="showMessage('السور')">
+    📖 السور
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="showMessage('الأجزاء والأحزاب')">
+    📚 الأجزاء والأحزاب
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="showMessage('البحث')">
+    🔎 البحث
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="bookmarkPage()">
+    🔖 حفظ الصفحة الحالية
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="goBookmark()">
+    🕘 الذهاب إلى العلامة المرجعية
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="toggleDark()">
+    🌙 الوضع الليلي
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="zoomIn()">
+    🔍 تكبير
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="zoomOut()">
+    🔎 تصغير
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="resetZoom()">
+    ↔️ الحجم الطبيعي
+  </button>
+
+  <button
+    class="menu-item"
+    onclick="showMessage('القراء والتلاوات')">
+    🎧 القراء والتلاوات
+  </button>
+
+  <button
+    class="menu-item close"
+    onclick="closeMenu()">
+    ✕ إغلاق
+  </button>
+
+</aside>
+
+
+<script>
+
+const TOTAL_PAGES = 604;
+
+let currentPage =
+  parseInt(
+    localStorage.getItem("quranPage") || "1",
+    10
+  );
+
+let zoom = 1;
+
+const image =
+  document.getElementById("quranPage");
+
+const loading =
+  document.getElementById("loading");
+
+const pageWrapper =
+  document.getElementById("pageWrapper");
+
+const sideMenu =
+  document.getElementById("sideMenu");
+
+const overlay =
+  document.getElementById("overlay");
+
+
+/* =========================
+   تحميل صفحة المصحف
+========================= */
+
+function loadPage(page){
+
+  page = parseInt(page,10);
+
+  if(page < 1)
+    page = 1;
+
+  if(page > TOTAL_PAGES)
+    page = TOTAL_PAGES;
+
+  currentPage = page;
+
+  loading.style.display = "flex";
+  image.style.display = "none";
+
+  image.onload = function(){
+
+    loading.style.display = "none";
+    image.style.display = "block";
+
+    applyZoom();
+  };
+
+  image.onerror = function(){
+
+    loading.textContent =
+      "تعذر تحميل صفحة المصحف رقم " +
+      currentPage;
+  };
+
+  /*
+    صور الصفحات موجودة بهذا الشكل:
+    1.png
+    2.png
+    3.png
+    ...
+    604.png
+  */
+
+  image.src =
+    currentPage + ".png";
+
+  localStorage.setItem(
+    "quranPage",
+    currentPage
+  );
+}
+
+
+/* =========================
+   السحب لتقليب الصفحات
+========================= */
+
+let startX = 0;
+let startY = 0;
+
+pageWrapper.addEventListener(
+  "touchstart",
+  function(event){
+
+    const touch =
+      event.touches[0];
+
+    startX =
+      touch.clientX;
+
+    startY =
+      touch.clientY;
+
+  },
+  {passive:true}
+);
+
+
+pageWrapper.addEventListener(
+  "touchend",
+  function(event){
+
+    const touch =
+      event.changedTouches[0];
+
+    const endX =
+      touch.clientX;
+
+    const endY =
+      touch.clientY;
+
+    const distanceX =
+      endX - startX;
+
+    const distanceY =
+      endY - startY;
+
+
+    /* تجاهل السحب العمودي */
+
+    if(
+      Math.abs(distanceY) >
+      Math.abs(distanceX)
+    ){
+      return;
+    }
+
+
+    /* أقل مسافة للسحب */
+
+    if(
+      Math.abs(distanceX) < 60
+    ){
+      return;
+    }
+
+
+    /*
+      الاتجاه المعتمد:
+
+      من اليمين إلى اليسار
+      = السابقة
+
+      من اليسار إلى اليمين
+      = التالية
+    */
+
+    if(distanceX < 0){
+
+      if(currentPage > 1){
+
+        loadPage(
+          currentPage - 1
+        );
+
+      }
+
+    }else{
+
+      if(currentPage < TOTAL_PAGES){
+
+        loadPage(
+          currentPage + 1
+        );
+
+      }
+
+    }
+
+  },
+  {passive:true}
+);
+
+
+/* =========================
+   القائمة
+========================= */
+
+function openMenu(){
+
+  sideMenu.classList.add("open");
+  overlay.classList.add("show");
+
+}
+
+
+function closeMenu(){
+
+  sideMenu.classList.remove("open");
+  overlay.classList.remove("show");
+
+}
+
+
+/* =========================
+   العلامة المرجعية
+========================= */
+
+function bookmarkPage(){
+
+  localStorage.setItem(
+    "quranBookmark",
+    currentPage
+  );
+
+  alert(
+    "تم حفظ الصفحة " +
+    currentPage
+  );
+
+}
+
+
+function goBookmark(){
+
+  const bookmark =
+    localStorage.getItem(
+      "quranBookmark"
+    );
+
+  if(bookmark){
+
+    loadPage(
+      parseInt(bookmark,10)
+    );
+
+    closeMenu();
+
+  }else{
+
+    alert(
+      "لا توجد علامة مرجعية محفوظة."
+    );
+
+  }
+
+}
+
+
+/* =========================
+   التكبير
+========================= */
+
+function zoomIn(){
+
+  if(zoom < 2.5){
+
+    zoom += .1;
+    applyZoom();
+
+  }
+
+}
+
+
+function zoomOut(){
+
+  if(zoom > .5){
+
+    zoom -= .1;
+    applyZoom();
+
+  }
+
+}
+
+
+function resetZoom(){
+
+  zoom = 1;
+  applyZoom();
+
+}
+
+
+function applyZoom(){
+
+  image.style.width =
+    (zoom * 100) + "%";
+
+}
+
+
+/* =========================
+   الوضع الليلي
+========================= */
+
+function toggleDark(){
+
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "quranDark",
+    document.body.classList.contains("dark")
+  );
+
+}
+
+
+if(
+  localStorage.getItem("quranDark")
+  === "true"
+){
+
+  document.body.classList.add("dark");
+
+}
+
+
+/* =========================
+   عناصر ستضاف لاحقًا
+========================= */
+
+function showMessage(section){
+
+  alert(
+    "قسم " +
+    section +
+    " سنضيفه في الخطوة التالية."
+  );
+
+}
+
+
+/* =========================
+   بدء التطبيق
+========================= */
+
+loadPage(currentPage);
+
+</script>
+
+</body>
+</html>
