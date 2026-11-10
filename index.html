@@ -74,6 +74,7 @@
 <link rel="stylesheet" href="css/23-picker-classic-fullscreen-match.css" id="picker-classic-fullscreen-match">
 <link rel="stylesheet" href="css/24-final-classic-native-download-selects-css.css" id="final-classic-native-download-selects-css">
 <link rel="stylesheet" href="css/25-final-download-main-picker-scroll-css.css" id="final-download-main-picker-scroll-css">
+<link rel="stylesheet" href="css/26-player-audio-source-indicator.css" id="player-audio-source-indicator-css">
 </head>
 
 <body>
@@ -134,6 +135,10 @@
 
           <span class="reader-name" id="readerName">
             الشيخ عبد الرحمن السديس
+          </span>
+          <span id="audioSourceIndicator" class="audio-source-indicator" hidden aria-live="polite">
+            <span class="audio-source-dot" aria-hidden="true"></span>
+            <span id="audioSourceText"></span>
           </span>
         </div>
 
@@ -1126,6 +1131,8 @@ body.interface-new #downloadsPopup .download-glass-chevron{
 
 
 <script src="js/27-aya-offline-scrollbar-indicator.js" id="aya-offline-scrollbar-indicator"></script>
+
+<script src="js/30-player-audio-source-indicator.js" id="player-audio-source-indicator"></script>
 
 </body>
 
