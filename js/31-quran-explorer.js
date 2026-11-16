@@ -75,8 +75,23 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       juzStarts.forEach((p,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent='الجزء '+juzNames[i];b.addEventListener('click',()=>goPage(p));$('qeJuz').appendChild(b);});
       getSurahRows().forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.innerHTML=`${i+1}. ${s[0]}<small>صفحة ${s[1]}</small>`;b.addEventListener('click',()=>goPage(s[1]));$('qeSurahs').appendChild(b);});
     }else if(tab==='stories'){
-      host.innerHTML='<p class="qe-note">اختر قصة، ثم اختر الحدث الذي تريد الوصول إليه. سينتقل المصحف إلى صفحة الآية المحددة.</p><div class="qe-content" id="qeStories"></div><div id="qeStoryDetail"></div>';
-      storyDetails.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s.title;$('qeStories').appendChild(b);b.addEventListener('click',()=>renderStoryDetail(s));});
+      host.innerHTML='<p class="qe-note">اختر قصة لعرض أحداثها ومواضعها في القرآن، ثم اضغط على الحدث للانتقال إلى الآية.</p><div class="qe-accordion" id="qeStories"></div>';
+      storyDetails.forEach((s,index)=>{
+        const row=document.createElement('div');row.className='qe-journey-row';
+        const b=document.createElement('button');b.type='button';b.className='qe-journey-toggle';
+        const title=document.createElement('span');title.textContent=s.title;
+        const arrow=document.createElement('span');arrow.className='qe-journey-arrow';arrow.textContent='▾';arrow.setAttribute('aria-hidden','true');
+        b.append(title,arrow);
+        const panel=document.createElement('div');panel.className='qe-journey-panel';panel.hidden=true;
+        b.setAttribute('aria-expanded','false');
+        b.addEventListener('click',()=>{
+          const opening=panel.hidden;
+          host.querySelectorAll('.qe-journey-panel').forEach(p=>p.hidden=true);
+          host.querySelectorAll('.qe-journey-toggle').forEach(t=>{t.setAttribute('aria-expanded','false');t.classList.remove('expanded');});
+          if(opening){panel.hidden=false;b.setAttribute('aria-expanded','true');b.classList.add('expanded');renderStoryDetail(s,panel);}
+        });
+        row.append(b,panel);$('qeStories').appendChild(row);
+      });
     }else if(tab==='journey'){
       host.innerHTML='<p class="qe-note">اختر رحلة لعرض محطاتها القرآنية، ثم اضغط على المحطة للانتقال إلى موضعها.</p><div class="qe-accordion" id="qeJourneys"></div>';
       journeyDetails.forEach((j,index)=>{
@@ -145,8 +160,8 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       ['كيد أصحاب الفيل لهدم الكعبة',105,1],['إرسال الطير الأبابيل عليهم',105,3],['رميهم بحجارة من سجيل',105,4],['جعلهم كعصف مأكول',105,5]
     ]}
   ];
-  function renderStoryDetail(story){
-    const host=$('qeStoryDetail');if(!host)return;
+  function renderStoryDetail(story,target){
+    const host=target||$('qeStoryDetail');if(!host)return;
     host.innerHTML='<h3>'+story.title+'</h3><p class="qe-note">اضغط على الحدث للانتقال إلى آيته في المصحف.</p><div class="qe-content" id="qeStoryEvents"></div>';
     story.events.forEach(ev=>{
       const b=document.createElement('button');b.className='qe-item';
