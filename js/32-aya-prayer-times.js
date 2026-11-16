@@ -23,7 +23,7 @@
     if(b) b.onclick=(event)=>{event.preventDefault();event.stopPropagation();open();};
     if(!$('ayaPrayerOverlay')){
       const ov=document.createElement('div');ov.className='popup-overlay';ov.id='ayaPrayerOverlay';
-      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-countdown" id="ayaPrayerCountdown" aria-live="polite">المتبقي للصلاة القادمة —</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><button type="button" id="ayaQiblaToggle" class="aya-qibla-toggle">🧭 اتجاه القبلة</button><section id="ayaQiblaPanel" class="aya-qibla-panel" hidden><div class="aya-qibla-dial"><div class="aya-qibla-north">N</div><div id="ayaQiblaNeedle" class="aya-qibla-needle">▲</div><div class="aya-qibla-center">🕋</div></div><div id="ayaQiblaStatus" class="aya-qibla-status">اضغط لبدء تحديد اتجاه القبلة.</div><div id="ayaQiblaBearing" class="aya-qibla-bearing"></div></section><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="المدينة — مثل Ankara" autocomplete="address-level2"><input id="ayaPrayerCountryInput" placeholder="الدولة — مثل Turkey" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form></div>';
+      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-countdown" id="ayaPrayerCountdown" aria-live="polite">المتبقي للصلاة القادمة —</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><button type="button" id="ayaQiblaToggle" class="aya-qibla-toggle">🧭 اتجاه القبلة</button><section id="ayaQiblaPanel" class="aya-qibla-panel" hidden><div class="aya-qibla-dial"><div class="aya-qibla-north">N</div><div id="ayaQiblaNeedle" class="aya-qibla-needle">▲</div><div class="aya-qibla-center">🕋</div></div><div id="ayaQiblaStatus" class="aya-qibla-status">اضغط لبدء تحديد اتجاه القبلة.</div><div id="ayaQiblaBearing" class="aya-qibla-bearing"></div></section><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="اكتب اسم المدينة — مثل Ankara" autocomplete="off" aria-autocomplete="list" aria-controls="ayaPrayerCitySuggestions"><div id="ayaPrayerCitySuggestions" class="aya-city-suggestions" role="listbox" hidden></div><input id="ayaPrayerCountryInput" placeholder="الدولة — تُملأ تلقائيًا عند اختيار المدينة" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form></div>';
       document.body.appendChild(ov);
       const st=document.createElement('style');st.textContent=`
       #ayaPrayerOverlay{z-index:650;align-items:center;justify-content:center}
@@ -98,10 +98,55 @@
       body.interface-new #ayaPrayerOverlay .aya-prayer-item.aya-prayer-item-upcoming b:after{color:#8ff0b5}
       body.night-mode #ayaPrayerOverlay .aya-prayer-countdown{color:#e7ffef}
       body.night-mode #ayaPrayerOverlay .aya-prayer-countdown strong{color:#9be7b5}
+
+      .aya-city-suggestions{display:grid;gap:5px;margin-top:-3px;max-height:190px;overflow:auto;border:1px solid rgba(120,150,130,.35);border-radius:10px;padding:5px;background:#172b38}
+      .aya-city-suggestions[hidden]{display:none}
+      .aya-city-suggestion{width:100%;border:0;border-radius:8px;padding:11px 10px;background:rgba(255,255,255,.08);color:#f5f8fb;text-align:right;font:inherit;cursor:pointer}
+      .aya-city-suggestion:active{background:rgba(70,190,125,.28)}
+      .aya-city-suggestion small{display:block;opacity:.75;font-size:12px;margin-top:3px}
       `;document.head.appendChild(st);
       $('ayaPrayerClose').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close()});$('ayaQiblaToggle').onclick=async()=>{const panel=$('ayaQiblaPanel');panel.hidden=!panel.hidden;if(!panel.hidden)await startQibla();};
       $('ayaPrayerRefresh').onclick=()=>{state.mode='auto';save();loadAuto(true)};
       $('ayaPrayerManualToggle').onclick=()=>{$('ayaPrayerManual').hidden=!$('ayaPrayerManual').hidden};
+      
+      const cityInput=$('ayaPrayerCityInput'),countryInput=$('ayaPrayerCountryInput'),suggestions=$('ayaPrayerCitySuggestions');
+      let citySearchTimer=0,citySearchController=null;
+      cityInput.addEventListener('input',()=>{
+        clearTimeout(citySearchTimer);
+        const q=cityInput.value.trim();
+        suggestions.innerHTML='';suggestions.hidden=true;
+        if(q.length<2)return;
+        citySearchTimer=setTimeout(async()=>{
+          try{
+            citySearchController?.abort();citySearchController=new AbortController();
+            const url='https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=8&language=ar&format=json';
+            const response=await fetch(url,{signal:citySearchController.signal});
+            if(!response.ok)throw Error('تعذر تحميل اقتراحات المدن');
+            const data=await response.json(),items=(data.results||[]).slice(0,8);
+            suggestions.innerHTML='';
+            if(!items.length){
+              const empty=document.createElement('div');empty.className='aya-city-suggestion';empty.textContent='لا توجد نتائج؛ يمكنك كتابة المدينة والدولة يدويًا.';suggestions.appendChild(empty);
+            }else items.forEach(item=>{
+              const button=document.createElement('button');button.type='button';button.className='aya-city-suggestion';button.setAttribute('role','option');
+              const title=document.createElement('span');title.textContent=item.name||q;
+              const detail=document.createElement('small');detail.textContent=[item.admin1,item.country].filter(Boolean).join('، ');
+              button.append(title,detail);
+              button.addEventListener('click',()=>{
+                cityInput.value=item.name||q;
+                countryInput.value=item.country||'';
+                suggestions.hidden=true;suggestions.innerHTML='';
+                cityInput.blur();
+              });
+              suggestions.appendChild(button);
+            });
+            suggestions.hidden=false;
+          }catch(error){if(error.name!=='AbortError'){$('ayaPrayerStatus').textContent='تعذر تحميل اقتراحات المدن؛ يمكنك إدخال الاسم يدويًا.';}}
+        },350);
+      });
+      document.addEventListener('click',event=>{
+        if(!suggestions.contains(event.target)&&event.target!==cityInput)suggestions.hidden=true;
+      });
+
       $('ayaPrayerManual').onsubmit=e=>{e.preventDefault();loadCity($('ayaPrayerCityInput').value.trim(),$('ayaPrayerCountryInput').value.trim())};
       $('ayaPrayerAuto').onclick=()=>{state.mode='auto';save();$('ayaPrayerManual').hidden=true;loadAuto(true)};
     }
