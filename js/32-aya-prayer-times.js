@@ -21,10 +21,23 @@
       else menu.insertBefore(b,menu.firstChild);
     }
     if(b) b.onclick=(event)=>{event.preventDefault();event.stopPropagation();open();};
+    let qb=$('ayaQiblaButton');
+    if(!qb&&menu){
+      qb=document.createElement('button');qb.type='button';qb.className='menu-item';qb.id='ayaQiblaButton';qb.textContent='🧭 البوصلة والقبلة';
+      if(b&&b.parentNode===menu)b.insertAdjacentElement('afterend',qb);else menu.insertBefore(qb,menu.firstChild);
+    }
+    if(qb)qb.onclick=(event)=>{event.preventDefault();event.stopPropagation();openQibla();};
     if(!$('ayaPrayerOverlay')){
       const ov=document.createElement('div');ov.className='popup-overlay';ov.id='ayaPrayerOverlay';
-      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-countdown" id="ayaPrayerCountdown" aria-live="polite">المتبقي للصلاة القادمة —</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><button type="button" id="ayaQiblaToggle" class="aya-qibla-toggle">🧭 اتجاه القبلة</button><section id="ayaQiblaPanel" class="aya-qibla-panel" hidden><div class="aya-qibla-dial"><div class="aya-qibla-north">N</div><div id="ayaQiblaNeedle" class="aya-qibla-needle">▲</div><div class="aya-qibla-center">🕋</div></div><div id="ayaQiblaStatus" class="aya-qibla-status">اضغط لبدء تحديد اتجاه القبلة.</div><div id="ayaQiblaBearing" class="aya-qibla-bearing"></div></section><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="اكتب اسم المدينة — مثل Ankara" autocomplete="off" aria-autocomplete="list" aria-controls="ayaPrayerCitySuggestions"><div id="ayaPrayerCitySuggestions" class="aya-city-suggestions" role="listbox" hidden></div><input id="ayaPrayerCountryInput" placeholder="الدولة — تُملأ تلقائيًا عند اختيار المدينة" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form></div>';
+      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-countdown" id="ayaPrayerCountdown" aria-live="polite">المتبقي للصلاة القادمة —</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="اكتب اسم المدينة — مثل Ankara" autocomplete="off" aria-autocomplete="list" aria-controls="ayaPrayerCitySuggestions"><div id="ayaPrayerCitySuggestions" class="aya-city-suggestions" role="listbox" hidden></div><input id="ayaPrayerCountryInput" placeholder="الدولة — تُملأ تلقائيًا عند اختيار المدينة" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form></div>';
       document.body.appendChild(ov);
+      if(!$('ayaQiblaOverlay')){
+        const qov=document.createElement('div');qov.className='popup-overlay';qov.id='ayaQiblaOverlay';
+        qov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🧭 البوصلة والقبلة</h2><button type="button" class="popup-close" id="ayaQiblaClose">✕</button></div><div class="aya-prayer-city" id="ayaQiblaCity">اتجاه القبلة</div><section id="ayaQiblaPanel" class="aya-qibla-panel"><div class="aya-qibla-dial"><div class="aya-qibla-north">N</div><div id="ayaQiblaNeedle" class="aya-qibla-needle">▲</div><div class="aya-qibla-center">🕋</div></div><div id="ayaQiblaStatus" class="aya-qibla-status">جارٍ تجهيز البوصلة…</div><div id="ayaQiblaBearing" class="aya-qibla-bearing"></div></section></div>';
+        document.body.appendChild(qov);
+        qov.querySelector('#ayaQiblaClose').onclick=()=>qov.classList.remove('show');
+        qov.addEventListener('click',e=>{if(e.target===qov)qov.classList.remove('show')});
+      }
       const st=document.createElement('style');st.textContent=`
       #ayaPrayerOverlay{z-index:650;align-items:center;justify-content:center}
       #ayaPrayerOverlay .aya-prayer-box{width:min(94vw,430px);max-height:88dvh;overflow:auto;direction:rtl}
@@ -105,7 +118,7 @@
       .aya-city-suggestion:active{background:rgba(70,190,125,.28)}
       .aya-city-suggestion small{display:block;opacity:.75;font-size:12px;margin-top:3px}
       `;document.head.appendChild(st);
-      $('ayaPrayerClose').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close()});$('ayaQiblaToggle').onclick=async()=>{const panel=$('ayaQiblaPanel');panel.hidden=!panel.hidden;if(!panel.hidden)await startQibla();};
+      $('ayaPrayerClose').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close()});
       $('ayaPrayerRefresh').onclick=()=>{state.mode='auto';save();loadAuto(true)};
       $('ayaPrayerManualToggle').onclick=()=>{$('ayaPrayerManual').hidden=!$('ayaPrayerManual').hidden};
       
@@ -152,6 +165,12 @@
     }
   }
   function open(){installUI();$('ayaPrayerOverlay').classList.add('show');render();if(!state.timings||state.date!==dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone))loadCurrent()}
+  function openQibla(){
+    installUI();
+    $('ayaQiblaOverlay').classList.add('show');
+    $('ayaQiblaCity').textContent=state.city?(state.city+(state.country?'، '+state.country:'')):'اتجاه القبلة';
+    startQibla();
+  }
   function close(){$('ayaPrayerOverlay')?.classList.remove('show')}
   const prayerOrder=['Fajr','Dhuhr','Asr','Maghrib','Isha'];
   function zonedClock(){
