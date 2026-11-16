@@ -823,6 +823,14 @@ jobs:
           fi
           echo "Verified: packaged assets have no in-app updater."
 
+      # ============================================================
+      # ADHAN — إشعارات الأذان الأصلية في أندرويد
+      # ============================================================
+
+      - name: Configure native adhan notifications
+        run: |
+          python3 scripts/add-adhan-notifications.py
+
       - name: Build signed release APK
         working-directory: android-app/android
         env:
