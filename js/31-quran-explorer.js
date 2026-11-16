@@ -8,7 +8,7 @@
   ];
   const $=id=>document.getElementById(id);
   const getSurahRows=()=>typeof surahs!=='undefined'&&Array.isArray(surahs)?surahs:[];
-  function pageForSurah(n){return (window.surahs&&surahs[n-1])?Number(surahs[n-1][1]):1;}
+  function pageForSurah(n){const rows=getSurahRows();return (rows[n-1]&&Number(rows[n-1][1]))?Number(rows[n-1][1]):1;}
   function goPage(n){try{if(typeof loadPage==='function')loadPage(Math.max(1,Math.min(604,Number(n)||1)));}catch(e){} close();}
   function ensureUI(){
     if($('quranExplorerOverlay'))return;
