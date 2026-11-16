@@ -472,6 +472,17 @@ jobs:
           print("AyaMediaService.java restored and verified without overwriting it later.")
 
 
+      - name: Generate Quran home-screen widget
+        run: |
+          set -e
+          python3 scripts/add-quran-widget.py
+          test -f android-app/android/app/src/main/java/com/aya/alquran/AyaQuranWidgetProvider.java
+          test -f android-app/android/app/src/main/java/com/aya/alquran/AyaQuranWidgetBridge.java
+          grep -q 'AyaQuranWidgetBridge' android-app/android/app/src/main/java/com/aya/alquran/MainActivity.java
+          grep -q 'pendingSurah' android-app/android/app/src/main/java/com/aya/alquran/MainActivity.java
+          grep -q 'AyaQuranWidgetProvider' android-app/android/app/src/main/AndroidManifest.xml
+          echo "Quran widget Android integration generated and verified."
+
       - name: Remove invalid Activity onTaskRemoved override
         run: |
           python3 << 'PY'

@@ -37,11 +37,80 @@
       stories.forEach(s=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeJourneys').appendChild(b);});
     }else if(tab==='widget'){
       const saved=JSON.parse(localStorage.getItem('ayaWidgetVerse')||'null');
-      host.innerHTML=`<p class="qe-note">اكتب نص آية تريد عرضها في ويدجت الشاشة الرئيسية، ثم اضغط حفظ. يتطلب ظهور الويدجت تثبيت نسخة Android التي تتضمن دعم الويدجت، ثم إضافته من قائمة الويدجت في الهاتف.</p><textarea class="qe-verse" id="qeWidgetText" placeholder="اكتب الآية هنا">${saved&&saved.text?saved.text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])):''}</textarea><div class="qe-actions"><button class="qe-action" id="qeWidgetSave">حفظ الآية للويدجت</button><button class="qe-action" id="qeWidgetClear">مسح الاختيار</button></div><p class="qe-note" id="qeWidgetStatus"></p>`;
-      $('qeWidgetSave').addEventListener('click',()=>{const text=$('qeWidgetText').value.trim();if(!text){$('qeWidgetStatus').textContent='اكتب نص الآية أولًا.';return;}const value={text,updated:Date.now()};localStorage.setItem('ayaWidgetVerse',JSON.stringify(value));try{if(window.AyaQuranWidget&&typeof window.AyaQuranWidget.setVerse==='function'){window.AyaQuranWidget.setVerse(text);$('qeWidgetStatus').textContent='تم إرسال الآية إلى ويدجت Android.';}else{$('qeWidgetStatus').textContent='حُفظت الآية داخل التطبيق. سيصلها الويدجت عند تثبيت نسخة Android الداعمة.';}}catch(e){$('qeWidgetStatus').textContent='حُفظت الآية داخل التطبيق.';}});
-      $('qeWidgetClear').addEventListener('click',()=>{localStorage.removeItem('ayaWidgetVerse');$('qeWidgetText').value='';try{if(window.AyaQuranWidget)window.AyaQuranWidget.setVerse('افتح تطبيق آية لاختيار آية');}catch(e){}$('qeWidgetStatus').textContent='تم مسح الآية المحفوظة.';});
+      const details=saved&&saved.surah?('السورة: '+(saved.surahName||saved.surah)+' • الآية: '+saved.ayah+' • الصفحة: '+saved.page):'سيتم تحديث الويدجت تلقائيًا عند انتقال التظليل إلى آية جديدة.';
+      host.innerHTML='<p class="qe-note">يعرض الويدجت الآية التي يصل إليها التظليل تلقائيًا، مع اسم السورة ورقم الآية والصفحة. اضغط عليه للعودة إلى الموضع نفسه دون تشغيل الصوت.</p><div class="qe-verse" id="qeWidgetText" style="white-space:pre-wrap;text-align:center;line-height:1.9">'+(saved&&saved.text?saved.text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])):'لم يتم تحديد آية بعد')+'</div><p class="qe-note" id="qeWidgetMeta">'+details+'</p><p class="qe-note" id="qeWidgetStatus">يُحدّث التطبيق الويدجت تلقائيًا أثناء التلاوة أو عند تغيير الآية المظللة.</p>';
     }
   }
   function renderJourney(title,nums){const detail=$('qeJourneyDetail')||$('qeContent');detail.innerHTML=`<h3>${title}</h3><p class="qe-note">اضغط على اسم السورة للانتقال إلى بدايتها في المصحف.</p><div class="qe-content" id="qeJourneyItems"></div>`;nums.forEach(n=>{const rows=getSurahRows();const name=rows[n-1]?rows[n-1][0]:'سورة '+n;const b=document.createElement('button');b.className='qe-item';b.textContent=name;b.addEventListener('click',()=>goPage(pageForSurah(n)));$('qeJourneyItems').appendChild(b);});}
   document.addEventListener('DOMContentLoaded',ensureUI);if(document.readyState!=='loading')ensureUI();
+})();
+
+
+// مزامنة الويدجت مع الآية النشطة دون التأثير على مشغل الصوت أو التظليل.
+(function(){
+  'use strict';
+  let lastKey='';
+  async function publishAyah(info){
+    if(!info)return;
+    const surah=Number(info.surah), ayah=Number(info.ayah), page=Number(info.page)||0;
+    if(!(surah>0&&ayah>0))return;
+    const key=surah+':'+ayah+':'+page;
+    if(key===lastKey)return;
+    lastKey=key;
+    try{
+      const response=await fetch('https://api.alquran.cloud/v1/ayah/'+surah+':'+ayah+'/quran-uthmani');
+      if(!response.ok)throw new Error('Quran text request failed');
+      const json=await response.json();
+      const verse=(json&&json.data&&json.data.text)||'';
+      if(!verse)return;
+      const rows=window.surahs||[];
+      const surahName=rows[surah-1]?String(rows[surah-1][0]):('سورة '+surah);
+      const value={text:verse,surah,ayah,page,surahName,updated:Date.now()};
+      localStorage.setItem('ayaWidgetVerse',JSON.stringify(value));
+      if(window.AyaQuranWidget&&typeof window.AyaQuranWidget.setVerse==='function'){
+        window.AyaQuranWidget.setVerse(verse,surah,ayah,page,surahName);
+      }
+      const textEl=document.getElementById('qeWidgetText');
+      const metaEl=document.getElementById('qeWidgetMeta');
+      if(textEl)textEl.textContent=verse;
+      if(metaEl)metaEl.textContent='السورة: '+surahName+' • الآية: '+ayah+' • الصفحة: '+page;
+    }catch(e){lastKey='';}
+  }
+  window.addEventListener('aya:active-ayah',e=>publishAyah(e.detail));
+  async function openTarget(target){
+    if(!target||!target.surah||!target.ayah)return;
+    try{
+      if(typeof fetchTimingForSurah!=='function'||typeof loadPage!=='function')return;
+      const items=await fetchTimingForSurah(Number(target.surah));
+      const match=Array.isArray(items)?items.find(x=>Number(x.ayah)===Number(target.ayah)):null;
+      const targetPage=(match&&typeof pageFromTiming==='function'?pageFromTiming(match,target.surah):0)||Number(target.page)||1;
+      if(match&&typeof drawAyahHighlight==='function'){
+        if(typeof clearAyahHighlight==='function')clearAyahHighlight();
+        loadPage(targetPage,{keepAudio:true});
+        setTimeout(()=>{
+          try{
+            if(typeof currentPage!=='undefined'&&Number(currentPage)!==Number(targetPage))return;
+            drawAyahHighlight(match);
+          }catch(e){}
+        },700);
+      }else{
+        loadPage(targetPage,{keepAudio:true});
+      }
+    }catch(e){}
+  }
+  function pollTarget(){
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries++;
+      try{
+        if(window.AyaQuranWidget&&typeof window.AyaQuranWidget.consumeTarget==='function'){
+          const raw=window.AyaQuranWidget.consumeTarget();
+          if(raw){clearInterval(timer);openTarget(JSON.parse(raw));return;}
+        }
+      }catch(e){}
+      if(tries>=40)clearInterval(timer);
+    },350);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pollTarget,{once:true});
+  else pollTarget();
 })();
