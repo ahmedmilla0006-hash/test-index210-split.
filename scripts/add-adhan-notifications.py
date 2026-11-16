@@ -187,14 +187,18 @@ public class AyaAdhanBridge {
 }
 ''', encoding="utf-8")
 
-# Attach the bridge without replacing existing Android interfaces.
+# Attach the bridge beside the existing private-audio interface.
+# This stable anchor is part of the generated MainActivity.
 activity = java / "MainActivity.java"
 code = activity.read_text(encoding="utf-8")
-anchor = 'getBridge().getWebView().addJavascriptInterface(new AyaMediaJs(), "AndroidInterface");'
-if "AyaAdhanBridge" not in code:
+anchor = 'getBridge().getWebView().addJavascriptInterface(new AyaPrivateAudioStoreJs(), "AyaPrivateAudioStore");'
+injection = 'getBridge().getWebView().addJavascriptInterface(new AyaAdhanBridge(this), "AyaAdhan");'
+if injection not in code:
     if anchor not in code:
-        raise SystemExit("Cannot find AndroidInterface bridge injection point in MainActivity.java")
-    code = code.replace(anchor, anchor + '\n            getBridge().getWebView().addJavascriptInterface(new AyaAdhanBridge(this), "AyaAdhan");', 1)
+        raise SystemExit("Cannot find stable WebView bridge injection point in MainActivity.java")
+    code = code.replace(anchor, anchor + '\n            ' + injection, 1)
 activity.write_text(code, encoding="utf-8")
+if injection not in activity.read_text(encoding="utf-8"):
+    raise SystemExit("ERROR: AyaAdhan JavaScript bridge was not injected")
 
 print("Native per-prayer adhan scheduling components generated.")
