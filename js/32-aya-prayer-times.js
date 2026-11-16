@@ -46,8 +46,8 @@
       $('ayaPrayerAuto').onclick=()=>{state.mode='auto';save();$('ayaPrayerManual').hidden=true;loadAuto(true)};
     }
   }
-  function open(){installUI();$('ayaPrayerOverlay').classList.add('open');render();if(!state.timings||state.date!==dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone))loadCurrent()}
-  function close(){$('ayaPrayerOverlay')?.classList.remove('open')}
+  function open(){installUI();$('ayaPrayerOverlay').classList.add('show');render();if(!state.timings||state.date!==dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone))loadCurrent()}
+  function close(){$('ayaPrayerOverlay')?.classList.remove('show')}
   function render(){
     if(!$('ayaPrayerGrid'))return;
     $('ayaPrayerCity').textContent=state.city?(state.city+(state.country?'، '+state.country:'')):'لم تُحدد المدينة بعد';
