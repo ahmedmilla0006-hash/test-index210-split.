@@ -78,7 +78,9 @@ public final class AyaAdhanScheduler {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(previous);
         cal.add(Calendar.DAY_OF_YEAR, 1);
-        schedule(c, key, name, cal.getTimeInMillis());
+        long next = cal.getTimeInMillis();
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong(key + "_next", next).apply();
+        schedule(c, key, name, next);
     }
 }
 ''', encoding="utf-8")
@@ -134,13 +136,12 @@ public class AyaAdhanBootReceiver extends BroadcastReceiver {
         for (String[] prayer : PRAYERS) {
             if (!p.getBoolean(prayer[0], false)) continue;
             long at = p.getLong(prayer[0] + "_next", 0L);
-            if (at <= System.currentTimeMillis()) {
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.HOUR_OF_DAY, 5); cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0);
-                while (cal.getTimeInMillis() <= System.currentTimeMillis()) cal.add(Calendar.DAY_OF_YEAR, 1);
-                at = cal.getTimeInMillis();
-            }
+            if (at <= 0L) continue;
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(at);
+            while (cal.getTimeInMillis() <= System.currentTimeMillis()) cal.add(Calendar.DAY_OF_YEAR, 1);
+            at = cal.getTimeInMillis();
+            p.edit().putLong(prayer[0] + "_next", at).apply();
             AyaAdhanScheduler.schedule(c, prayer[0], prayer[1], at);
         }
     }
