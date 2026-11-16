@@ -483,6 +483,16 @@ jobs:
           grep -q 'AyaQuranWidgetProvider' android-app/android/app/src/main/AndroidManifest.xml
           echo "Quran widget Android integration generated and verified."
 
+      - name: Generate per-prayer adhan notifications
+        run: |
+          set -e
+          python3 scripts/add-adhan-notifications.py
+          test -f android-app/android/app/src/main/java/com/aya/alquran/AyaAdhanReceiver.java
+          test -f android-app/android/app/src/main/java/com/aya/alquran/AyaAdhanBridge.java
+          grep -q 'AyaAdhanBridge' android-app/android/app/src/main/java/com/aya/alquran/MainActivity.java
+          grep -q 'AyaAdhanReceiver' android-app/android/app/src/main/AndroidManifest.xml
+          echo "Per-prayer adhan notification components generated and verified."
+
       - name: Remove invalid Activity onTaskRemoved override
         run: |
           python3 << 'PY'
