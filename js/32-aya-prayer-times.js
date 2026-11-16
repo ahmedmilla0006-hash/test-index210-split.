@@ -205,7 +205,7 @@
     document.querySelectorAll('#ayaPrayerGrid .aya-prayer-item').forEach(el=>el.classList.toggle('aya-prayer-item-upcoming',el.dataset.prayer===next));
   }
   function zonedEpoch(dateText,timeText,zone){
-    const m=String(timeText||'').match(/^(\\d{1,2}):(\\d{2})/);if(!m)return 0;
+    const m=String(timeText||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return 0;
     const d=String(dateText||'').split('-').map(Number);if(d.length!==3)return 0;
     const target=Date.UTC(d[0],d[1]-1,d[2],Number(m[1]),Number(m[2]),0);
     let guess=target;
@@ -240,8 +240,8 @@
       if(!state.adhan[key]){try{window.AyaAdhan.cancel(key)}catch(_){};continue;}
       let at=zonedEpoch(today,state.timings[key],zone);
       if(at<=now){
-        const tomorrow=new Date(Date.UTC(...today.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))+[12]));
-        tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
+        const dateParts=today.split('-').map(Number);
+        const tomorrow=new Date(Date.UTC(dateParts[0],dateParts[1]-1,dateParts[2]+1,12));
         const nextDate=tomorrow.toISOString().slice(0,10);
         at=zonedEpoch(nextDate,state.timings[key],zone);
       }
