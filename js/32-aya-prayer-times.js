@@ -39,9 +39,20 @@
       #ayaPrayerManual[hidden]{display:none}
       #ayaPrayerManual input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #888;background:transparent;color:inherit;font:inherit}
       .aya-prayer-foot{text-align:center;font-size:12px;opacity:.7;line-height:1.7;margin-top:13px}
+      /* المظهر الكلاسيكي: نافذة فاتحة ونص واضح */
+      #ayaPrayerOverlay .aya-prayer-box{background:#f5f0e7;color:#202020;border:1px solid #d8cdbb}
+      #ayaPrayerOverlay .aya-prayer-box .popup-header h2{color:#176b36}
+      #ayaPrayerOverlay .aya-prayer-status{color:#555;opacity:1}
+      #ayaPrayerOverlay .aya-prayer-item{background:#fff;border:1px solid #ded6c9;color:#202020}
+      #ayaPrayerOverlay .aya-prayer-item b{color:#333}
+      #ayaPrayerOverlay .aya-prayer-item strong{color:#145c30}
+      #ayaPrayerOverlay .aya-prayer-city{color:#176b36}
       body.interface-new #ayaPrayerOverlay .aya-prayer-box{background:rgba(28,42,56,.82);color:#f4f7f9;border:1px solid rgba(200,220,235,.22);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
-      body.interface-new #ayaPrayerOverlay .aya-prayer-item{background:rgba(55,72,88,.4);border-color:rgba(200,220,235,.18)}
-      body.night-mode #ayaPrayerOverlay .aya-prayer-box{background:#242424;color:#f2f2f2}
+      body.interface-new #ayaPrayerOverlay .aya-prayer-item{background:rgba(55,72,88,.4);border-color:rgba(200,220,235,.18);color:#f4f7f9}
+      body.interface-new #ayaPrayerOverlay .aya-prayer-item b,body.interface-new #ayaPrayerOverlay .aya-prayer-item strong{color:#f4f7f9}
+      body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-box{background:#242424;color:#f2f2f2;border-color:#444}
+      body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-item{background:#303030;color:#f2f2f2;border-color:#505050}
+      body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-item b,body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-item strong{color:#f2f2f2}
       `;document.head.appendChild(st);
       $('ayaPrayerClose').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close()});
       $('ayaPrayerRefresh').onclick=()=>{state.mode='auto';save();loadAuto(true)};
