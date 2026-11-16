@@ -138,9 +138,9 @@
         const permission=await DeviceOrientationEvent.requestPermission();
         if(permission!=='granted'){status.textContent='لم يُسمح باستخدام مستشعر الاتجاه.';return;}
       }
-      // نستخدم حدثًا واحدًا فقط حتى لا تتكرر القراءات وتسبب اهتزاز المؤشر.
-      window.addEventListener('deviceorientationabsolute',handler,true);
-      window.addEventListener('deviceorientation',handler,true);
+      // نفضّل الحدث المطلق لأنه مرتبط بالشمال المغناطيسي، ونتجنب تسجيل الحدثين معًا.
+      const orientationEvent=('ondeviceorientationabsolute' in window)?'deviceorientationabsolute':'deviceorientation';
+      window.addEventListener(orientationEvent,handler,true);
       qiblaListening=true;
     }catch(err){status.textContent='تعذر تشغيل البوصلة. افتح الموقع عبر اتصال آمن HTTPS.';}
   }
