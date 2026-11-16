@@ -6,10 +6,30 @@
   const stories=[
     ['آدم عليه السلام',[1,2,7,15,17,18,20]],['نوح عليه السلام',[7,10,11,23,26,54,71]],['هود عليه السلام',[7,11,26,46]],['صالح عليه السلام',[7,11,26,27]],['إبراهيم عليه السلام',[2,6,9,11,14,15,19,21,26,29,37,51,60]],['لوط عليه السلام',[7,11,15,26,29,37,54]],['يوسف عليه السلام',[12,40]],['موسى عليه السلام',[2,7,10,17,18,20,26,27,28,40,43,44,79]],['داود وسليمان عليهما السلام',[2,4,21,27,34,38]],['أصحاب الكهف',[18]],['ذو القرنين',[18]],['مريم وعيسى عليهما السلام',[3,4,5,19,23,43,57,61]],['أصحاب الأخدود',[85]],['أصحاب الفيل',[105]]
   ];
+  let activeAyah=null;
+  let lastObservedPage=0;
+  function currentPageNumber(){return Math.max(1,Math.min(604,Number(localStorage.getItem('quranPage')||1)));}
+  function currentJuzIndex(page){let index=0;for(let i=0;i<juzStarts.length;i++){if(page>=juzStarts[i])index=i;else break;}return index;}
+  function currentSurahIndex(page){const rows=getSurahRows();let index=0;for(let i=0;i<rows.length;i++){if(page>=Number(rows[i][1]))index=i;else break;}return index;}
+  function refreshCurrentPosition(){
+    const host=$('qeCurrentPosition');if(!host)return;
+    const page=currentPageNumber(),rows=getSurahRows(),si=currentSurahIndex(page),ji=currentJuzIndex(page);
+    const surahName=rows[si]?rows[si][0]:'—';
+    const ayahText=activeAyah&&Number(activeAyah.page)===page?' • الآية '+Number(activeAyah.ayah):'';
+    host.innerHTML='<div class="qe-current-title">📍 موضعك الحالي في المصحف</div>'+
+      '<div class="qe-current-meta">سورة '+surahName+ayahText+'<br>الجزء '+juzNames[ji]+' • الصفحة '+page+' من 604</div>'+
+      '<button type="button" class="qe-action" id="qeGoCurrent">العودة إلى موضعي الحالي</button>';
+    const go=$('qeGoCurrent');if(go)go.addEventListener('click',()=>{try{if(typeof loadPage==='function')loadPage(page,{keepAudio:true});}catch(e){}close();});
+  }
   const $=id=>document.getElementById(id);
   const getSurahRows=()=>typeof surahs!=='undefined'&&Array.isArray(surahs)?surahs:[];
   function pageForSurah(n){const rows=getSurahRows();return (rows[n-1]&&Number(rows[n-1][1]))?Number(rows[n-1][1]):1;}
   function goPage(n){try{if(typeof loadPage==='function')loadPage(Math.max(1,Math.min(604,Number(n)||1)));}catch(e){} close();}
+  window.addEventListener('aya:active-ayah',e=>{
+    if(e&&e.detail)activeAyah={surah:Number(e.detail.surah),ayah:Number(e.detail.ayah),page:Number(e.detail.page)||currentPageNumber()};
+    refreshCurrentPosition();
+  });
+  setInterval(()=>{const page=currentPageNumber();if(page!==lastObservedPage){lastObservedPage=page;refreshCurrentPosition();}},500);
   function ensureUI(){
     if($('quranExplorerOverlay'))return;
     const menu=$('sideMenu'); if(!menu)return;
@@ -61,6 +81,9 @@ body.night-mode #quranExplorerOverlay .qe-item{background:#303a32;color:#f1f1f1;
 body.night-mode #quranExplorerOverlay .qe-verse{border-color:#555;color:#f2f2f2}
 body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
 `;document.head.appendChild(style);
+    const positionStyle=document.createElement('style');
+    positionStyle.textContent='.qe-current-position{border:1px solid rgba(22,132,67,.35);background:rgba(22,132,67,.08);border-radius:14px;padding:12px;margin:10px 0 16px}.qe-current-title{font-weight:700;margin-bottom:6px}.qe-current-meta{line-height:1.8;margin-bottom:10px}';
+    document.head.appendChild(positionStyle);
     const overlay=document.createElement('div');overlay.id='quranExplorerOverlay';overlay.innerHTML=`<section class="qe-box" role="dialog" aria-modal="true"><header class="qe-head"><h2>🧭 خريطة القرآن ورحلاته</h2><button class="qe-close" id="qeClose" aria-label="إغلاق">×</button></header><nav class="qe-tabs"><button class="qe-tab active" data-tab="map">خريطة القرآن</button><button class="qe-tab" data-tab="stories">قصص القرآن</button><button class="qe-tab" data-tab="journey">رحلة داخل القرآن</button><button class="qe-tab" data-tab="widget">الويدجت القرآني</button></nav><div id="qeContent"></div></section>`;
     document.body.appendChild(overlay);
     $('quranExplorerButton').addEventListener('click',()=>open('map'));
@@ -71,9 +94,10 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
   function close(){const ov=$('quranExplorerOverlay');if(ov)ov.classList.remove('open');}
   function render(tab){const host=$('qeContent');if(!host)return;
     if(tab==='map'){
-      host.innerHTML='<p class="qe-note">اختر جزءًا أو سورة للانتقال مباشرة إلى موضعها في المصحف.</p><h3>الأجزاء</h3><div class="qe-content" id="qeJuz"></div><h3>السور</h3><div class="qe-content" id="qeSurahs"></div>';
+      host.innerHTML='<p class="qe-note">تابع موضع قراءتك الحالي، أو اختر جزءًا أو سورة للانتقال مباشرة إلى المصحف.</p><div class="qe-current-position" id="qeCurrentPosition"></div><h3>الأجزاء</h3><div class="qe-content" id="qeJuz"></div><h3>السور</h3><div class="qe-content" id="qeSurahs"></div>';
       juzStarts.forEach((p,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent='الجزء '+juzNames[i];b.addEventListener('click',()=>goPage(p));$('qeJuz').appendChild(b);});
       getSurahRows().forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.innerHTML=`${i+1}. ${s[0]}<small>صفحة ${s[1]}</small>`;b.addEventListener('click',()=>goPage(s[1]));$('qeSurahs').appendChild(b);});
+      lastObservedPage=currentPageNumber();refreshCurrentPosition();
     }else if(tab==='stories'){
       host.innerHTML='<p class="qe-note">اختر قصة لعرض أحداثها ومواضعها في القرآن، ثم اضغط على الحدث للانتقال إلى الآية.</p><div class="qe-accordion" id="qeStories"></div>';
       storyDetails.forEach((s,index)=>{
