@@ -282,12 +282,29 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
   ];
   function renderJourney(journey,target){
     const detail=target||$('qeJourneyDetail')||$('qeContent');
-    detail.innerHTML='<h3>'+journey.title+'</h3><p class="qe-note">هذه محطات مختارة للتدبر في الموضوع، وليست حصرًا لكل الآيات المتعلقة به. اضغط على المحطة لفتح موضعها في المصحف ومزامنة مشغل التلاوة.</p><div class="qe-content" id="qeJourneyItems"></div>';
-    journey.events.forEach(ev=>{
-      const b=document.createElement('button');b.className='qe-item';
-      b.innerHTML=ev[0]+'<small>سورة '+(getSurahRows()[ev[1]-1]?.[0]||ev[1])+' • الآية '+ev[2]+'</small>';
-      b.addEventListener('click',()=>goToStoryAyah(ev[1],ev[2]));
-      $('qeJourneyItems').appendChild(b);
+    detail.innerHTML='<h3>'+journey.title+'</h3><p class="qe-note">هذه محطات مختارة للتدبر في الموضوع، وليست حصرًا لكل الآيات المتعلقة به. افتح كل محطة لقراءة تفاصيلها، ثم اضغط زر الانتقال لفتح موضعها في المصحف.</p><div class="qe-content qe-journey-events"></div>';
+    const list=detail.querySelector('.qe-journey-events');
+    journey.events.forEach((ev,index)=>{
+      const card=document.createElement('div');card.className='qe-story-event qe-journey-event';
+      const toggle=document.createElement('button');toggle.type='button';toggle.className='qe-item qe-story-event-toggle qe-journey-event-toggle';
+      const name=document.createElement('span');name.textContent=ev[0];
+      const arrow=document.createElement('span');arrow.className='qe-journey-arrow';arrow.textContent='▾';
+      const ref=document.createElement('small');ref.textContent='سورة '+(getSurahRows()[ev[1]-1]?.[0]||ev[1])+' • الآية '+ev[2];
+      toggle.append(name,arrow,ref);
+      const panel=document.createElement('div');panel.className='qe-story-event-detail qe-journey-event-detail';panel.hidden=true;
+      const explanation=document.createElement('p');
+      explanation.textContent='تتناول هذه المحطة موضوع «'+ev[0]+'» ضمن '+journey.title+'. تأمل الآية في سياقها، واربط معناها بالمحطات الأخرى في هذه الرحلة.';
+      const go=document.createElement('button');go.type='button';go.className='qe-item qe-story-go';go.textContent='انتقل إلى الآية في المصحف';
+      go.addEventListener('click',()=>goToStoryAyah(ev[1],ev[2]));
+      panel.append(explanation,go);
+      toggle.setAttribute('aria-expanded','false');
+      toggle.addEventListener('click',()=>{
+        const opening=panel.hidden;
+        list.querySelectorAll('.qe-journey-event-detail').forEach(p=>p.hidden=true);
+        list.querySelectorAll('.qe-journey-event-toggle').forEach(t=>{t.setAttribute('aria-expanded','false');t.classList.remove('expanded');});
+        if(opening){panel.hidden=false;toggle.setAttribute('aria-expanded','true');toggle.classList.add('expanded');}
+      });
+      card.append(toggle,panel);list.appendChild(card);
     });
   }
 
