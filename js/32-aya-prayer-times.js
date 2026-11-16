@@ -34,7 +34,7 @@
       document.body.appendChild(ov);
       if(!$('ayaQiblaOverlay')){
         const qov=document.createElement('div');qov.className='popup-overlay';qov.id='ayaQiblaOverlay';
-        qov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🧭 البوصلة والقبلة</h2><button type="button" class="popup-close" id="ayaQiblaClose">✕</button></div><div class="aya-prayer-city" id="ayaQiblaCity">اتجاه القبلة</div><section id="ayaQiblaPanel" class="aya-qibla-panel"><div class="aya-qibla-dial"><div class="aya-qibla-north">N</div><div id="ayaQiblaNeedle" class="aya-qibla-needle">▲</div><div class="aya-qibla-center">🕋</div></div><div id="ayaQiblaStatus" class="aya-qibla-status">جارٍ تجهيز البوصلة…</div><div id="ayaQiblaBearing" class="aya-qibla-bearing"></div></section></div>';
+        qov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🧭 البوصلة والقبلة</h2><button type="button" class="popup-close" id="ayaQiblaClose">✕</button></div><div class="aya-prayer-city" id="ayaQiblaCity">اتجاه القبلة</div><section id="ayaQiblaPanel" class="aya-qibla-panel"><div class="aya-qibla-dial"><div class="aya-qibla-north">N</div><div id="ayaQiblaNeedle" class="aya-qibla-needle">▲</div><div class="aya-qibla-center">🕋</div></div><div id="ayaQiblaStatus" class="aya-qibla-status">جارٍ تجهيز البوصلة…</div><div id="ayaQiblaBearing" class="aya-qibla-bearing"></div><div id="ayaQiblaHeading" class="aya-qibla-bearing">اتجاه الهاتف: --°</div><button type="button" id="ayaQiblaCalibrate" class="aya-qibla-toggle">↻ معايرة البوصلة</button></section></div>';
         document.body.appendChild(qov);
         qov.querySelector('#ayaQiblaClose').onclick=()=>qov.classList.remove('show');
         qov.addEventListener('click',e=>{if(e.target===qov)qov.classList.remove('show')});
@@ -315,16 +315,18 @@
     if(state.mode==='manual'&&state.city&&state.country)return loadCity(state.city,state.country);
     return loadAuto(false);
   }
-  let qiblaBearing=null,qiblaListening=false;
+  let qiblaBearing=null,qiblaListening=false,qiblaResetCalibration=null;
   function bearingToKaaba(lat,lon){const rad=x=>x*Math.PI/180,deg=x=>x*180/Math.PI,p1=rad(lat),p2=rad(21.422487),dl=rad(39.826206-lon),y=Math.sin(dl),x=Math.cos(p1)*Math.tan(p2)-Math.sin(p1)*Math.cos(dl);return(deg(Math.atan2(y,x))+360)%360;}
   async function startQibla(){
     const status=$('ayaQiblaStatus'),needle=$('ayaQiblaNeedle');
     if(!Number.isFinite(Number(state.latitude))||!Number.isFinite(Number(state.longitude))){status.textContent='حدّد المدينة أولًا من مواقيت الصلاة.';return;}
     qiblaBearing=bearingToKaaba(Number(state.latitude),Number(state.longitude));
     $('ayaQiblaBearing').textContent='اتجاه القبلة من الشمال: '+Math.round(qiblaBearing)+'°';
-    status.textContent='حرّك الهاتف ببطء بشكل أفقي لمعايرة البوصلة.';
-    // تنعيم قراءة المستشعر لتقليل اهتزاز السهم، مع تجنب الاستماع المزدوج.
+    status.textContent='لتحسين القراءة، حرّك الهاتف على شكل رقم 8 ثم اضغط معايرة البوصلة.';
     let smoothedHeading=null,lastEventTime=0;
+    qiblaResetCalibration=()=>{smoothedHeading=null;lastEventTime=0;status.textContent='تمت إعادة المعايرة؛ حرّك الهاتف ببطء حتى تستقر القراءة.';};
+    const calibrate=$('ayaQiblaCalibrate');
+    if(calibrate)calibrate.onclick=()=>{if(qiblaResetCalibration)qiblaResetCalibration();};
     const handler=e=>{
       if(e.timeStamp===lastEventTime)return;
       lastEventTime=e.timeStamp;
@@ -335,11 +337,12 @@
       h=(h-angle+360)%360;
       if(smoothedHeading===null)smoothedHeading=h;
       else{
-        let delta=((h-smoothedHeading+540)%360)-180;
-        // مرشح دائري منخفض التمرير؛ يخمد القفزات الصغيرة والمتوسطة.
-        if(Math.abs(delta)<1.2)return;
-        smoothedHeading=(smoothedHeading+delta*0.14+360)%360;
+        const delta=((h-smoothedHeading+540)%360)-180;
+        if(Math.abs(delta)<0.35)return;
+        // تنعيم دائري أقوى لتقليل اهتزاز القراءة والسهم.
+        smoothedHeading=(smoothedHeading+delta*0.08+360)%360;
       }
+      $('ayaQiblaHeading').textContent='اتجاه الهاتف: '+Math.round(smoothedHeading)+'°';
       const relative=((qiblaBearing-smoothedHeading+540)%360)-180;
       needle.style.transform='rotate('+relative+'deg)';
       status.textContent='اتجاه القبلة — حرّك الهاتف ببطء حتى يشير السهم إلى الأعلى.';
@@ -351,7 +354,6 @@
         const permission=await DeviceOrientationEvent.requestPermission();
         if(permission!=='granted'){status.textContent='لم يُسمح باستخدام مستشعر الاتجاه.';return;}
       }
-      // نفضّل الحدث المطلق لأنه مرتبط بالشمال المغناطيسي، ونتجنب تسجيل الحدثين معًا.
       const orientationEvent=('ondeviceorientationabsolute' in window)?'deviceorientationabsolute':'deviceorientation';
       window.addEventListener(orientationEvent,handler,true);
       qiblaListening=true;
