@@ -935,10 +935,10 @@ jobs:
           text = gradle.read_text(encoding="utf-8")
           if gradle.name.endswith(".kts"):
               pattern = r'applicationId\s*=\s*"[^"]+"'
-              replacement = 'applicationId = "com.aya.alquran.test"'
+              replacement = 'applicationId = "com.aya.alquran.test1"'
           else:
               pattern = r'applicationId\s+"[^"]+"'
-              replacement = 'applicationId "com.aya.alquran.test"'
+              replacement = 'applicationId "com.aya.alquran.test1"'
 
           text, count = re.subn(pattern, replacement, text, count=1)
           if count != 1:
@@ -948,7 +948,7 @@ jobs:
 
           text = "\n".join(line for line in text.splitlines() if "applicationIdSuffix" not in line) + "\n"
           gradle.write_text(text, encoding="utf-8")
-          print("Test applicationId set to com.aya.alquran.test; Java namespace preserved.")
+          print("Test applicationId set to com.aya.alquran.test1; Java namespace preserved.")
           PY
 
           ./gradlew assembleDebug --stacktrace
