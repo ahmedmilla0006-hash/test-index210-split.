@@ -711,12 +711,26 @@ body.interface-old.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0 !impo
       const json=await response.json();
       const verse=(json&&json.data&&json.data.text)||'';
       if(!verse)return;
+      // جلب الآية السابقة واللاحقة لعرض سياق القراءة في الويدجت المصغّر.
+      const totalAyahs=Number(json.data&&json.data.surah&&json.data.surah.numberOfAyahs)||0;
+      const getNeighbor=async n=>{
+        if(n<1||n>totalAyahs)return '';
+        try{
+          const r=await fetch('https://api.alquran.cloud/v1/ayah/'+surah+':'+n+'/quran-uthmani');
+          if(!r.ok)return '';
+          const d=await r.json();return (d&&d.data&&d.data.text)||'';
+        }catch(e){return '';}
+      };
+      const neighbors=await Promise.all([getNeighbor(ayah-1),getNeighbor(ayah+1)]);
       const rows=(typeof surahs!=='undefined'&&Array.isArray(surahs))?surahs:[];
       const surahName=rows[surah-1]?String(rows[surah-1][0]):('سورة '+surah);
       const value={text:verse,surah,ayah,page,surahName,updated:Date.now()};
       localStorage.setItem('ayaWidgetVerse',JSON.stringify(value));
       if(window.AyaQuranWidget&&typeof window.AyaQuranWidget.setVerse==='function'){
         window.AyaQuranWidget.setVerse(verse,surah,ayah,page,surahName);
+      }
+      if(window.AyaQuranWidget&&typeof window.AyaQuranWidget.setMiniVerses==='function'){
+        window.AyaQuranWidget.setMiniVerses(neighbors[0],verse,neighbors[1],surah,ayah,page,surahName);
       }
       const textEl=document.getElementById('qeWidgetText');
       const metaEl=document.getElementById('qeWidgetMeta');
