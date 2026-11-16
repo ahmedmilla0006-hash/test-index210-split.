@@ -31,7 +31,7 @@
       getSurahRows().forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.innerHTML=`${i+1}. ${s[0]}<small>صفحة ${s[1]}</small>`;b.addEventListener('click',()=>goPage(s[1]));$('qeSurahs').appendChild(b);});
     }else if(tab==='stories'){
       host.innerHTML='<p class="qe-note">اختر قصة لعرض السور التي وردت فيها. مواضع السور هنا دليل تنقّل عام وليست حصرًا لكل الآيات.</p><div class="qe-content" id="qeStories"></div>';
-      stories.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeStories').appendChild(b);});
+      stories.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>goPage(pageForSurah(s[1][0])));$('qeStories').appendChild(b);});
     }else if(tab==='journey'){
       host.innerHTML='<p class="qe-note">اختر قصة، ثم تنقّل بين السور التي وردت فيها.</p><div class="qe-content" id="qeJourneys"></div><div id="qeJourneyDetail"></div>';
       stories.forEach(s=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeJourneys').appendChild(b);});
