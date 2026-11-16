@@ -15,7 +15,7 @@
     const menu=$('sideMenu'); if(!menu)return;
     const btn=document.createElement('button');btn.className='menu-item';btn.id='quranExplorerButton';btn.type='button';btn.textContent='🧭 خريطة القرآن ورحلاته';
     const before=$('searchButton'); if(before)menu.insertBefore(btn,before);else menu.appendChild(btn);
-    const style=document.createElement('style');style.textContent=`#quranExplorerOverlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px}#quranExplorerOverlay.open{display:flex}.qe-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--popup-bg,#fff);color:var(--text-color,#222);border-radius:18px;padding:16px;box-shadow:0 12px 40px #0005}.qe-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qe-head h2{font-size:19px;margin:0}.qe-close,.qe-tab,.qe-item,.qe-action{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}.qe-close{font-size:24px;background:transparent;color:inherit}.qe-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.qe-tab{background:#e8eee9;color:#174b2c}.qe-tab.active{background:#168443;color:white}.qe-content{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}.qe-item{background:rgba(22,132,67,.10);color:inherit;text-align:right;border:1px solid rgba(22,132,67,.2)}.qe-item small{display:block;opacity:.7;margin-top:4px}.qe-note{line-height:1.7;opacity:.8}.qe-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qe-action{background:#168443;color:white}.qe-verse{width:100%;min-height:70px;border-radius:10px;padding:10px;border:1px solid #aaa;background:transparent;color:inherit;font:inherit}.qe-accordion{display:flex;flex-direction:column;gap:10px;margin-top:12px}.qe-journey-row{width:100%}.qe-journey-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:right;border:1px solid rgba(200,220,235,.18);border-radius:14px;padding:15px 16px;background:rgba(55,72,88,.42);color:inherit;font:inherit;cursor:pointer}.qe-journey-arrow{font-size:22px;transition:transform .2s ease;color:#69cf91;flex:0 0 auto}.qe-journey-toggle.expanded .qe-journey-arrow{transform:rotate(180deg)}.qe-journey-panel{padding:12px 4px 4px}.qe-journey-panel[hidden]{display:none}.qe-journey-panel h3{margin:4px 0 8px}.qe-journey-panel .qe-content{grid-template-columns:1fr;gap:8px}
+    const style=document.createElement('style');style.textContent=`#quranExplorerOverlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px}#quranExplorerOverlay.open{display:flex}.qe-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--popup-bg,#fff);color:var(--text-color,#222);border-radius:18px;padding:16px;box-shadow:0 12px 40px #0005}.qe-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qe-head h2{font-size:19px;margin:0}.qe-close,.qe-tab,.qe-item,.qe-action{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}.qe-close{font-size:24px;background:transparent;color:inherit}.qe-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.qe-tab{background:#e8eee9;color:#174b2c}.qe-tab.active{background:#168443;color:white}.qe-content{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}.qe-item{background:rgba(22,132,67,.10);color:inherit;text-align:right;border:1px solid rgba(22,132,67,.2)}.qe-item small{display:block;opacity:.7;margin-top:4px}.qe-note{line-height:1.7;opacity:.8}.qe-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qe-action{background:#168443;color:white}.qe-verse{width:100%;min-height:70px;border-radius:10px;padding:10px;border:1px solid #aaa;background:transparent;color:inherit;font:inherit}.qe-accordion{display:flex;flex-direction:column;gap:10px;margin-top:12px}.qe-journey-row{width:100%}.qe-journey-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:right;border:1px solid rgba(200,220,235,.18);border-radius:14px;padding:15px 16px;background:rgba(55,72,88,.42);color:inherit;font:inherit;cursor:pointer}.qe-journey-arrow{font-size:22px;transition:transform .2s ease;color:#69cf91;flex:0 0 auto}.qe-journey-toggle.expanded .qe-journey-arrow{transform:rotate(180deg)}.qe-journey-panel{padding:12px 4px 4px}.qe-journey-panel[hidden]{display:none}.qe-journey-panel h3{margin:4px 0 8px}.qe-journey-panel .qe-content{grid-template-columns:1fr;gap:8px}.qe-story-event{width:100%;margin:0 0 9px}.qe-story-event-toggle{display:grid!important;grid-template-columns:1fr auto;align-items:center;gap:5px 10px;text-align:right}.qe-story-event-toggle small{grid-column:1/-1;display:block;opacity:.72;font-size:.88em}.qe-story-event-toggle .qe-journey-arrow{grid-column:2;grid-row:1}.qe-story-event-detail{padding:12px 14px 14px;margin-top:6px;border:1px solid rgba(200,220,235,.14);border-radius:12px;background:rgba(20,35,48,.22)}.qe-story-event-detail[hidden]{display:none}.qe-story-event-detail p{line-height:1.9;margin:0 0 12px}.qe-story-go{width:100%;background:rgba(24,132,67,.85)!important;color:#fff!important;border-color:rgba(105,207,145,.5)!important}
 /* الواجهة الزجاجية الجديدة: اجعل الخريطة تتبعها حتى في الوضع النهاري */
 body.interface-new #quranExplorerOverlay .qe-box{background:rgba(28,42,56,.96);color:#f4f7f9;border:1px solid rgba(200,220,235,.22);box-shadow:0 16px 48px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.06)}
 body.interface-new #quranExplorerOverlay .qe-head h2{color:#fff}
@@ -160,14 +160,46 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       ['كيد أصحاب الفيل لهدم الكعبة',105,1],['إرسال الطير الأبابيل عليهم',105,3],['رميهم بحجارة من سجيل',105,4],['جعلهم كعصف مأكول',105,5]
     ]}
   ];
+  const storyIntroductions={
+    'آدم عليه السلام':'تبدأ القصة بخلق آدم واستخلافه في الأرض، وتعليم الله له، ثم ابتلاء الشجرة، فالتوبة والهبوط إلى الأرض، وما فيها من دروس عن التكريم والطاعة والتوبة وعداوة الشيطان.',
+    'نوح عليه السلام':'تعرض القصة دعوة نوح الطويلة لقومه، وصبره على التكذيب، ثم أمر السفينة والطوفان، ونجاة المؤمنين، وما تكشفه من عاقبة الإيمان والتكذيب.',
+    'هود عليه السلام':'تتناول دعوة هود لقوم عاد، وتذكيرهم بنعم الله وقوتهم، وموقفهم من دعوته، ثم نجاة المؤمنين وهلاك المكذبين.',
+    'صالح عليه السلام':'تتناول دعوة صالح لثمود، وناقة الله بوصفها آية، وموقف القوم منها، ثم عاقبة العقر والمكر ونجاة المؤمنين.',
+    'إبراهيم عليه السلام':'تجمع محطات ابتلاء إبراهيم وتوحيده، ومحاجته لقومه، وتحطيم الأصنام، ونجاته من النار، وبناء الكعبة، وبشارة الذرية وابتلاء الذبح.',
+    'لوط عليه السلام':'تعرض دعوة لوط لقومه، وإصرارهم على الفاحشة، وقدوم الملائكة، ثم نجاة لوط وأهله إلا امرأته ونزول العذاب بالقوم.',
+    'يوسف عليه السلام':'تسرد القصة رؤيا يوسف، ومحنة إخوته والجب، وابتلاء المراودة والسجن، ثم تأويل الرؤى والتمكين واجتماع الأسرة والعفو.',
+    'موسى عليه السلام':'تتبع القصة حياة موسى منذ ولادته ونشأته، وخروجه إلى مدين، وتكليفه بالرسالة، ومواجهته فرعون، ونجاة بني إسرائيل، وما وقع في غيبته.',
+    'داود وسليمان عليهما السلام':'تعرض نماذج من ملك داود وسليمان وحكمتهما، وتسخير الله لهما، وقضايا القضاء والملك، وقصة الهدهد وملكة سبأ.',
+    'أصحاب الكهف':'تتناول فتية آمنوا بالله وثبتوا على التوحيد، فاعتزلوا قومهم ولجؤوا إلى الكهف، فضرب الله على آذانهم ثم بعثهم آية للناس.',
+    'ذو القرنين':'تروي رحلات ذي القرنين إلى مغرب الشمس ومطلعها، ثم وصوله إلى قوم طلبوا الحماية من يأجوج ومأجوج وبناء الردم.',
+    'مريم وعيسى عليهما السلام':'تتناول نذر مريم وكفالتها، والبشارة بعيسى وميلاده، وكلامه في المهد ورسالته، ثم بيان القرآن لحقيقة أمره ورفعه.',
+    'أصحاب الأخدود':'تصف اضطهاد المؤمنين بسبب إيمانهم، وثباتهم أمام التعذيب بالنار، ووعيد الظالمين ووعد المؤمنين.',
+    'أصحاب الفيل':'تذكر محاولة أصحاب الفيل الاعتداء على البيت الحرام، وكيف أبطل الله كيدهم وأرسل عليهم طيرًا أبابيل.'
+  };
   function renderStoryDetail(story,target){
     const host=target||$('qeStoryDetail');if(!host)return;
-    host.innerHTML='<h3>'+story.title+'</h3><p class="qe-note">اضغط على الحدث للانتقال إلى آيته في المصحف.</p><div class="qe-content" id="qeStoryEvents"></div>';
-    story.events.forEach(ev=>{
-      const b=document.createElement('button');b.className='qe-item';
-      b.innerHTML=ev[0]+'<small>سورة '+(getSurahRows()[ev[1]-1]?.[0]||ev[1])+' • الآية '+ev[2]+'</small>';
-      b.addEventListener('click',()=>goToStoryAyah(ev[1],ev[2]));
-      $('qeStoryEvents').appendChild(b);
+    host.innerHTML='<h3>'+story.title+'</h3><p class="qe-note">'+(storyIntroductions[story.title]||'تتضمن هذه القصة أحداثًا متتابعة، اختر كل حدث لقراءة ملخصه والوصول إلى موضعه في المصحف.')+'</p><p class="qe-note">اضغط على الحدث لعرض تفاصيله، ثم استخدم زر الانتقال لفتح الآية.</p><div class="qe-content" id="qeStoryEvents"></div>';
+    const list=host.querySelector('#qeStoryEvents');
+    story.events.forEach((ev,index)=>{
+      const card=document.createElement('div');card.className='qe-story-event';
+      const toggle=document.createElement('button');toggle.type='button';toggle.className='qe-item qe-story-event-toggle';
+      const name=document.createElement('span');name.textContent=ev[0];
+      const arrow=document.createElement('span');arrow.className='qe-journey-arrow';arrow.textContent='▾';
+      const ref=document.createElement('small');ref.textContent='سورة '+(getSurahRows()[ev[1]-1]?.[0]||ev[1])+' • الآية '+ev[2];
+      toggle.append(name,arrow,ref);
+      const detail=document.createElement('div');detail.className='qe-story-event-detail';detail.hidden=true;
+      const explanation=document.createElement('p');explanation.textContent='يتناول هذا الموضع: '+ev[0]+'. وهو محطة من أحداث قصة '+story.title+'؛ اقرأ الآية في سياق ما قبلها وما بعدها لفهم تسلسل الحدث ودلالته.';
+      const go=document.createElement('button');go.type='button';go.className='qe-item qe-story-go';go.textContent='انتقل إلى الآية في المصحف';
+      go.addEventListener('click',()=>goToStoryAyah(ev[1],ev[2]));
+      detail.append(explanation,go);
+      toggle.setAttribute('aria-expanded','false');
+      toggle.addEventListener('click',()=>{
+        const opening=detail.hidden;
+        list.querySelectorAll('.qe-story-event-detail').forEach(p=>p.hidden=true);
+        list.querySelectorAll('.qe-story-event-toggle').forEach(t=>{t.setAttribute('aria-expanded','false');t.classList.remove('expanded');});
+        if(opening){detail.hidden=false;toggle.setAttribute('aria-expanded','true');toggle.classList.add('expanded');}
+      });
+      card.append(toggle,detail);list.appendChild(card);
     });
   }
   async function goToStoryAyah(surah,ayah){
