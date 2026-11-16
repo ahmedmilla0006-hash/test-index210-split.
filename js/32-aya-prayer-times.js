@@ -110,9 +110,39 @@
     qiblaBearing=bearingToKaaba(Number(state.latitude),Number(state.longitude));
     $('ayaQiblaBearing').textContent='اتجاه القبلة من الشمال: '+Math.round(qiblaBearing)+'°';
     status.textContent='حرّك الهاتف ببطء بشكل أفقي لمعايرة البوصلة.';
-    const handler=e=>{let h=Number.isFinite(e.webkitCompassHeading)?e.webkitCompassHeading:(Number.isFinite(e.alpha)?360-e.alpha:NaN);if(!Number.isFinite(h))return;const angle=(screen.orientation&&Number(screen.orientation.angle))||0;h=(h-angle+360)%360;needle.style.transform='rotate('+((qiblaBearing-h+360)%360)+'deg)';status.textContent='اتجاه القبلة — حرّك الهاتف حتى يشير السهم إلى الأعلى.';};
+    // تنعيم قراءة المستشعر لتقليل اهتزاز السهم، مع تجنب الاستماع المزدوج.
+    let smoothedHeading=null,lastEventTime=0;
+    const handler=e=>{
+      if(e.timeStamp===lastEventTime)return;
+      lastEventTime=e.timeStamp;
+      let h=Number.isFinite(e.webkitCompassHeading)?e.webkitCompassHeading:
+        (Number.isFinite(e.alpha)?360-e.alpha:NaN);
+      if(!Number.isFinite(h))return;
+      const angle=(screen.orientation&&Number(screen.orientation.angle))||0;
+      h=(h-angle+360)%360;
+      if(smoothedHeading===null)smoothedHeading=h;
+      else{
+        let delta=((h-smoothedHeading+540)%360)-180;
+        // مرشح دائري منخفض التمرير؛ يخمد القفزات الصغيرة والمتوسطة.
+        if(Math.abs(delta)<1.2)return;
+        smoothedHeading=(smoothedHeading+delta*0.14+360)%360;
+      }
+      const relative=((qiblaBearing-smoothedHeading+540)%360)-180;
+      needle.style.transform='rotate('+relative+'deg)';
+      status.textContent='اتجاه القبلة — حرّك الهاتف ببطء حتى يشير السهم إلى الأعلى.';
+    };
     if(qiblaListening)return;
-    try{if(typeof DeviceOrientationEvent==='undefined'){status.textContent='هذا الجهاز أو المتصفح لا يدعم مستشعر البوصلة.';return;}if(typeof DeviceOrientationEvent.requestPermission==='function'){const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted'){status.textContent='لم يُسمح باستخدام مستشعر الاتجاه.';return;}}window.addEventListener('deviceorientationabsolute',handler,true);window.addEventListener('deviceorientation',handler,true);qiblaListening=true;}catch(err){status.textContent='تعذر تشغيل البوصلة. افتح الموقع عبر اتصال آمن HTTPS.';}
+    try{
+      if(typeof DeviceOrientationEvent==='undefined'){status.textContent='هذا الجهاز أو المتصفح لا يدعم مستشعر البوصلة.';return;}
+      if(typeof DeviceOrientationEvent.requestPermission==='function'){
+        const permission=await DeviceOrientationEvent.requestPermission();
+        if(permission!=='granted'){status.textContent='لم يُسمح باستخدام مستشعر الاتجاه.';return;}
+      }
+      // نستخدم حدثًا واحدًا فقط حتى لا تتكرر القراءات وتسبب اهتزاز المؤشر.
+      window.addEventListener('deviceorientationabsolute',handler,true);
+      window.addEventListener('deviceorientation',handler,true);
+      qiblaListening=true;
+    }catch(err){status.textContent='تعذر تشغيل البوصلة. افتح الموقع عبر اتصال آمن HTTPS.';}
   }
   function init(){
     installUI();
