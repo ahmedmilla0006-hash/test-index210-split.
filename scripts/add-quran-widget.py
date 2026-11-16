@@ -53,6 +53,13 @@ public class AyaQuranWidgetBridge {
    .putString("surahName",surahName==null?"":surahName).apply();
   AyaQuranWidgetProvider.refresh(context);
  }
+ @JavascriptInterface public void setMiniVerses(String before,String current,String after,int surah,int ayah,int page,String surahName){
+  android.content.SharedPreferences sp=context.getSharedPreferences("aya_quran_widget",Context.MODE_PRIVATE);
+  sp.edit().putString("miniBefore",before==null?"":before).putString("miniCurrent",current==null?"":current)
+   .putString("miniAfter",after==null?"":after).putInt("miniSurah",surah).putInt("miniAyah",ayah)
+   .putInt("miniPage",page).putString("miniSurahName",surahName==null?"":surahName).apply();
+  AyaMiniMushafWidgetProvider.refresh(context);
+ }
  @JavascriptInterface public String consumeTarget(){
   android.content.SharedPreferences sp=context.getSharedPreferences("aya_quran_widget",Context.MODE_PRIVATE);
   int s=sp.getInt("pendingSurah",0), a=sp.getInt("pendingAyah",0), p=sp.getInt("pendingPage",0);
@@ -106,4 +113,57 @@ if "pendingSurah" not in code:
         '''
  code=code.replace(anchor,anchor+"\n        "+addition,1)
 activity.write_text(code,encoding="utf-8")
+
+// الويدجت الثاني: مصحف مصغّر مستقل عن الويدجت القرآني الحالي.
+(java / "AyaMiniMushafWidgetProvider.java").write_text("""package com.aya.alquran;
+import android.appwidget.AppWidgetProvider;
+import android.appwidget.AppWidgetManager;
+import android.content.Context;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.app.PendingIntent;
+import android.widget.RemoteViews;
+public class AyaMiniMushafWidgetProvider extends AppWidgetProvider {
+ public static void refresh(Context c) {
+  AppWidgetManager m=AppWidgetManager.getInstance(c);
+  int[] ids=m.getAppWidgetIds(new ComponentName(c,AyaMiniMushafWidgetProvider.class));
+  for(int id:ids){
+   RemoteViews v=new RemoteViews(c.getPackageName(),R.layout.aya_mini_mushaf_widget);
+   android.content.SharedPreferences sp=c.getSharedPreferences("aya_quran_widget",Context.MODE_PRIVATE);
+   v.setTextViewText(R.id.aya_mini_before,sp.getString("miniBefore","افتح تطبيق آية لبدء عرض المصحف"));
+   v.setTextViewText(R.id.aya_mini_current,sp.getString("miniCurrent",""));
+   v.setTextViewText(R.id.aya_mini_after,sp.getString("miniAfter",""));
+   String name=sp.getString("miniSurahName","");
+   int ayah=sp.getInt("miniAyah",0), page=sp.getInt("miniPage",0);
+   v.setTextViewText(R.id.aya_mini_meta,(name.isEmpty()?"":name+" • ") +(ayah>0?"الآية "+ayah:"") +(page>0?" • الصفحة "+page:""));
+   Intent i=new Intent(c,MainActivity.class);
+   i.setAction("com.aya.alquran.OPEN_MINI_MUSHAF_WIDGET");
+   i.putExtra("aya_widget_surah",sp.getInt("miniSurah",0));
+   i.putExtra("aya_widget_ayah",ayah); i.putExtra("aya_widget_page",page);
+   i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+   PendingIntent p=PendingIntent.getActivity(c,732,i,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+   v.setOnClickPendingIntent(R.id.aya_mini_root,p);
+   m.updateAppWidget(id,v);
+  }
+ }
+ @Override public void onUpdate(Context c,AppWidgetManager m,int[] ids){refresh(c);}
+}
+""",encoding="utf-8")
+(res/"layout/aya_mini_mushaf_widget.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/aya_mini_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:padding="10dp" android:background="@drawable/aya_quran_widget_glass">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المصحف المصغّر" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="13sp" android:paddingBottom="4dp"/>
+<TextView android:id="@+id/aya_mini_before" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#E6E9E8" android:textSize="13sp" android:maxLines="2" android:ellipsize="end" android:padding="2dp"/>
+<TextView android:id="@+id/aya_mini_current" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#17291E" android:textStyle="bold" android:textSize="16sp" android:maxLines="3" android:ellipsize="end" android:padding="6dp" android:background="#BCE8C9"/>
+<TextView android:id="@+id/aya_mini_after" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#E6E9E8" android:textSize="13sp" android:maxLines="2" android:ellipsize="end" android:padding="2dp"/>
+<TextView android:id="@+id/aya_mini_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#E7F5EA" android:textSize="10sp" android:paddingTop="4dp"/>
+</LinearLayout>""",encoding="utf-8")
+(res/"xml/aya_mini_mushaf_widget_info.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android" android:minWidth="220dp" android:minHeight="160dp" android:initialLayout="@layout/aya_mini_mushaf_widget" android:resizeMode="horizontal|vertical" android:widgetCategory="home_screen" android:updatePeriodMillis="0"/>""",encoding="utf-8")
+
+# Register the second widget without altering the existing widget receiver.
+mt=manifest.read_text(encoding="utf-8")
+if ".AyaMiniMushafWidgetProvider" not in mt:
+ receiver='''\n<receiver android:name=".AyaMiniMushafWidgetProvider" android:exported="true"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/aya_mini_mushaf_widget_info"/></receiver>\n'''
+ mt=mt.replace("</application>",receiver+"</application>")
+ manifest.write_text(mt,encoding="utf-8")
 print("Quran widget Android files and intent bridge generated.")
