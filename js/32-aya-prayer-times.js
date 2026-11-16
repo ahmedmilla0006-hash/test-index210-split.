@@ -7,6 +7,7 @@
   const names={Fajr:'الفجر',Sunrise:'الشروق',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء'};
   let state={mode:'auto',city:'',country:'',timezone:'',latitude:null,longitude:null,timings:null,date:'',updated:0};
   try{state={...state,...JSON.parse(localStorage.getItem(STORE)||'{}')}}catch(_){}
+  state.adhan={Fajr:false,Dhuhr:false,Asr:false,Maghrib:false,Isha:false,...(state.adhan||{})};
   const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(state))}catch(_){}};
   const dateAtZone=zone=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch(_){return new Date().toISOString().slice(0,10)}};
   const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -29,7 +30,7 @@
     if(qb)qb.onclick=(event)=>{event.preventDefault();event.stopPropagation();openQibla();};
     if(!$('ayaPrayerOverlay')){
       const ov=document.createElement('div');ov.className='popup-overlay';ov.id='ayaPrayerOverlay';
-      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-countdown" id="ayaPrayerCountdown" aria-live="polite">المتبقي للصلاة القادمة —</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="اكتب اسم المدينة — مثل Ankara" autocomplete="off" aria-autocomplete="list" aria-controls="ayaPrayerCitySuggestions"><div id="ayaPrayerCitySuggestions" class="aya-city-suggestions" role="listbox" hidden></div><input id="ayaPrayerCountryInput" placeholder="الدولة — تُملأ تلقائيًا عند اختيار المدينة" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form></div>';
+      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-countdown" id="ayaPrayerCountdown" aria-live="polite">المتبقي للصلاة القادمة —</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><section class="aya-adhan-settings" id="ayaAdhanSettings"><h3>🔔 تنبيهات الأذان</h3><p>فعّل التنبيه لكل صلاة على حدة.</p><div class="aya-adhan-options" id="ayaAdhanOptions"></div><div class="aya-adhan-note" id="ayaAdhanNote">تعمل التنبيهات في الخلفية بعد السماح بالإشعارات.</div></section><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="اكتب اسم المدينة — مثل Ankara" autocomplete="off" aria-autocomplete="list" aria-controls="ayaPrayerCitySuggestions"><div id="ayaPrayerCitySuggestions" class="aya-city-suggestions" role="listbox" hidden></div><input id="ayaPrayerCountryInput" placeholder="الدولة — تُملأ تلقائيًا عند اختيار المدينة" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form></div>';
       document.body.appendChild(ov);
       if(!$('ayaQiblaOverlay')){
         const qov=document.createElement('div');qov.className='popup-overlay';qov.id='ayaQiblaOverlay';
@@ -47,6 +48,11 @@
       .aya-prayer-item{display:flex;align-items:center;justify-content:space-between;padding:13px 12px;border-radius:12px;background:rgba(22,128,59,.09);border:1px solid rgba(22,128,59,.2)}
       .aya-prayer-item b{font-size:14px}.aya-prayer-item strong{font-size:17px;direction:ltr}
       .aya-prayer-actions{display:flex;gap:8px;margin-top:14px}
+      .aya-adhan-settings{margin-top:14px;padding:13px;border-radius:14px;background:rgba(22,128,59,.08);border:1px solid rgba(22,128,59,.2)}
+      .aya-adhan-settings h3{margin:0 0 4px;font-size:16px}.aya-adhan-settings p,.aya-adhan-note{font-size:12px;opacity:.75;margin:3px 0 9px;line-height:1.7}
+      .aya-adhan-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .aya-adhan-option{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:10px;background:rgba(128,150,135,.12);font-size:14px}
+      .aya-adhan-option input{width:20px;height:20px;accent-color:var(--green,#16803b)}
       .aya-prayer-actions button,#ayaPrayerManual button{flex:1;border:1px solid rgba(120,150,130,.35);border-radius:10px;padding:11px 8px;background:var(--green,#16803b);color:white;font:inherit}
       #ayaPrayerManual{display:grid;gap:8px;margin-top:12px}
       #ayaPrayerManual[hidden]{display:none}
@@ -198,12 +204,58 @@
     box.innerHTML='المتبقي على صلاة '+label+'<strong>'+[hh,mm,ss].map(n=>String(n).padStart(2,'0')).join(':')+'</strong>';
     document.querySelectorAll('#ayaPrayerGrid .aya-prayer-item').forEach(el=>el.classList.toggle('aya-prayer-item-upcoming',el.dataset.prayer===next));
   }
+  function zonedEpoch(dateText,timeText,zone){
+    const m=String(timeText||'').match(/^(\\d{1,2}):(\\d{2})/);if(!m)return 0;
+    const d=String(dateText||'').split('-').map(Number);if(d.length!==3)return 0;
+    const target=Date.UTC(d[0],d[1]-1,d[2],Number(m[1]),Number(m[2]),0);
+    let guess=target;
+    for(let i=0;i<3;i++){
+      const parts=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(guess));
+      const p={};parts.forEach(x=>p[x.type]=Number(x.value));
+      const represented=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second);
+      const delta=target-represented;if(!delta)break;guess+=delta;
+    }
+    return guess;
+  }
+  function renderAdhanSettings(){
+    const box=$('ayaAdhanOptions');if(!box)return;
+    box.innerHTML=prayerOrder.map(k=>'<label class="aya-adhan-option"><span>'+names[k]+'</span><input type="checkbox" data-adhan="'+k+'" '+(state.adhan[k]?'checked':'')+' aria-label="تنبيه صلاة '+names[k]+'"></label>').join('');
+    if(!box.dataset.bound){
+      box.dataset.bound='1';
+      box.addEventListener('change',e=>{
+        const input=e.target.closest('input[data-adhan]');if(!input)return;
+        state.adhan[input.dataset.adhan]=input.checked;save();
+        if(input.checked&&window.AyaAdhan?.requestExactAlarmPermission)window.AyaAdhan.requestExactAlarmPermission();
+        syncAdhanAlarms();
+        const note=$('ayaAdhanNote');
+        if(note)note.textContent=window.AyaAdhan?'تم حفظ اختيارك وجدولة التنبيه للصلاة المحددة.':'تم حفظ الاختيار. ستعمل التنبيهات في نسخة أندرويد بعد تثبيت البناء الداعم لها.';
+      });
+    }
+  }
+  function syncAdhanAlarms(){
+    if(!window.AyaAdhan||!state.timings)return;
+    const now=Date.now(),zone=state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const today=dateAtZone(zone);
+    for(const key of prayerOrder){
+      if(!state.adhan[key]){try{window.AyaAdhan.cancel(key)}catch(_){};continue;}
+      let at=zonedEpoch(today,state.timings[key],zone);
+      if(at<=now){
+        const tomorrow=new Date(Date.UTC(...today.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))+[12]));
+        tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
+        const nextDate=tomorrow.toISOString().slice(0,10);
+        at=zonedEpoch(nextDate,state.timings[key],zone);
+      }
+      if(at>now)try{window.AyaAdhan.schedule(key,names[key],at)}catch(_){}
+    }
+  }
   function render(){
     if(!$('ayaPrayerGrid'))return;
     $('ayaPrayerCity').textContent=state.city?(state.city+(state.country?'، '+state.country:'')):'لم تُحدد المدينة بعد';
     $('ayaPrayerGrid').innerHTML=state.timings?Object.keys(names).map(k=>'<div class="aya-prayer-item" data-prayer="'+k+'"><b>'+names[k]+'</b><strong>'+esc(state.timings[k]||'—')+'</strong></div>').join(''):'';
     $('ayaPrayerStatus').textContent=state.timings?'مواقيت اليوم • '+(state.date||'')+' • آخر تحديث: '+(state.updated?new Date(state.updated).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}):'—'):'سيتم جلب المواقيت عند توفر الإنترنت.';
     updatePrayerCountdown();
+    renderAdhanSettings();
+    syncAdhanAlarms();
   }
   async function getTimings(lat,lon,zone){
     const ts=Math.floor(Date.now()/1000),url='https://api.aladhan.com/v1/timings/'+ts+'?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lon)+'&method=13&timezonestring='+encodeURIComponent(zone||'Europe/Istanbul');
