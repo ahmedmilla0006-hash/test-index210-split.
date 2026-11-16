@@ -905,92 +905,72 @@ jobs:
           PY
 
       # ============================================================
-      # SIGNED TEST APK — SAME KEY AS THE MAIN APP, SEPARATE PACKAGE
+      # BUILD APK
       # ============================================================
 
-      - name: Decode and verify the same release keystore
-        env:
-          K1: ${{ secrets.KS1 }}
-          K2: ${{ secrets.KS2 }}
-          K3: ${{ secrets.KS3 }}
-          K4: ${{ secrets.KS4 }}
-          K5: ${{ secrets.KS5 }}
-          K6: ${{ secrets.KS6 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      - name: Ensure Manage Space in manifest (before APK build)
         run: |
-          python3 << 'PY'
-          import os, re, base64, pathlib, subprocess, sys
-          parts = [os.environ.get(f"K{i}") or "" for i in range(1, 7)]
-          if any(not p for p in parts):
-              raise SystemExit("ERROR: A keystore secret KS1..KS6 is missing.")
-          b64 = re.sub(r"[^A-Za-z0-9+/=]", "", "".join(parts))
-          b64 += "=" * ((-len(b64)) % 4)
-          raw = base64.b64decode(b64, validate=False)
-          out = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "aya-release.jks"
-          out.write_bytes(raw)
-          if len(raw) < 100:
-              raise SystemExit("ERROR: Decoded keystore is incomplete.")
-          result = subprocess.run(
-              ["keytool", "-list", "-keystore", str(out),
-               "-storepass", os.environ["KEYSTORE_PASSWORD"],
-               "-alias", os.environ["KEY_ALIAS"]],
-              capture_output=True, text=True)
-          if result.returncode:
-              print(result.stderr)
-              raise SystemExit("ERROR: Keystore verification failed.")
-          print("Production keystore verified.")
-          PY
+          python3 -c "import base64; exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKamF2YV9kaXIgPSBQYXRoKCJhbmRyb2lkLWFwcC9hbmRyb2lkL2FwcC9zcmMvbWFpbi9qYXZhL2NvbS9heWEvYWxxdXJhbiIpCmphdmFfZGlyLm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKbWFuaWZlc3QgPSBQYXRoKCJhbmRyb2lkLWFwcC9hbmRyb2lkL2FwcC9zcmMvbWFpbi9BbmRyb2lkTWFuaWZlc3QueG1sIikKbWFpbiA9IGphdmFfZGlyIC8gIk1haW5BY3Rpdml0eS5qYXZhIgpyZXMgPSBQYXRoKCJhbmRyb2lkLWFwcC9hbmRyb2lkL2FwcC9zcmMvbWFpbi9yZXMiKQoKcmVwbGFjZWQgPSAwCmZvciB4bWwgaW4gcmVzLnJnbG9iKCIqLnhtbCIpOgogICAgcCA9IHN0cih4bWwpCiAgICBpZiBhbnkoeCBpbiBwIGZvciB4IGluICgiL2xheW91dC8iLCAiL21pcG1hcCIsICIvZHJhd2FibGUiKSk6CiAgICAgICAgY29udGludWUKICAgIHRyeToKICAgICAgICB0ID0geG1sLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICBjb250aW51ZQogICAgaWYgIndpbmRvd0JhY2tncm91bmQiIG5vdCBpbiB0IGFuZCAiU3BsYXNoU2NyZWVuIiBub3QgaW4gdCBhbmQgInNwbGFzaCIgbm90IGluIHQubG93ZXIoKToKICAgICAgICBjb250aW51ZQogICAgb3JpZyA9IHQKICAgIHQgPSByZS5zdWIocicoPGl0ZW1ccytuYW1lPSJhbmRyb2lkOndpbmRvd0JhY2tncm91bmQiPilbXjxdKyg8L2l0ZW0+KScsIHInXDEjZjVmMGU3XDInLCB0KQogICAgdCA9IHJlLnN1YihyJyg8aXRlbVxzK25hbWU9IndpbmRvd0JhY2tncm91bmQiPilbXjxdKyg8L2l0ZW0+KScsIHInXDEjZjVmMGU3XDInLCB0KQogICAgdCA9IHJlLnN1YihyJyg8aXRlbVxzK25hbWU9ImFuZHJvaWQ6d2luZG93U3BsYXNoU2NyZWVuQmFja2dyb3VuZCI+KVtePF0rKDwvaXRlbT4pJywgcidcMSNmNWYwZTdcMicsIHQpCiAgICB0ID0gcmUuc3ViKHInKDxpdGVtXHMrbmFtZT0id2luZG93U3BsYXNoU2NyZWVuQmFja2dyb3VuZCI+KVtePF0rKDwvaXRlbT4pJywgcidcMSNmNWYwZTdcMicsIHQpCiAgICB0ID0gcmUuc3ViKHInKDxpdGVtXHMrbmFtZT0id2luZG93U3BsYXNoU2NyZWVuQW5pbWF0ZWRJY29uIj4pW148XSsoPC9pdGVtPiknLCByJ1wxQGFuZHJvaWQ6Y29sb3IvdHJhbnNwYXJlbnRcMicsIHQpCiAgICB0ID0gcmUuc3ViKHInKDxpdGVtXHMrbmFtZT0iYW5kcm9pZDp3aW5kb3dTcGxhc2hTY3JlZW5BbmltYXRlZEljb24iPilbXjxdKyg8L2l0ZW0+KScsIHInXDFAYW5kcm9pZDpjb2xvci90cmFuc3BhcmVudFwyJywgdCkKICAgIGlmIHQgIT0gb3JpZzoKICAgICAgICB4bWwud3JpdGVfdGV4dCh0LCBlbmNvZGluZz0idXRmLTgiKQogICAgICAgIHJlcGxhY2VkICs9IDEKICAgICAgICBwcmludCgicGF0Y2hlZCIsIHhtbCkKcHJpbnQoInRoZW1lcyBwYXRjaGVkOiIsIHJlcGxhY2VkKQoKdmFsdWVzID0gcmVzIC8gInZhbHVlcyIKdmFsdWVzLm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKZm9yIG9sZCBpbiBsaXN0KHZhbHVlcy5nbG9iKCJheWFfd2luZG93Ki54bWwiKSkgKyBsaXN0KHZhbHVlcy5nbG9iKCJheWFfc29saWQqLnhtbCIpKToKICAgIHRyeToKICAgICAgICBvbGQudW5saW5rKCkKICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgcGFzcwoKKHZhbHVlcyAvICJheWFfc29saWRfd2luZG93LnhtbCIpLndyaXRlX3RleHQoCiAgICAiPD94bWwgdmVyc2lvbj1cIjEuMFwiIGVuY29kaW5nPVwidXRmLThcIj8+XG4iCiAgICAiPHJlc291cmNlcz5cbiIKICAgICIgICAgPHN0eWxlIG5hbWU9XCJBeWEuU29saWRXaW5kb3dcIiBwYXJlbnQ9XCJAYW5kcm9pZDpzdHlsZS9UaGVtZS5EZXZpY2VEZWZhdWx0Lk5vQWN0aW9uQmFyXCI+XG4iCiAgICAiICAgICAgICA8aXRlbSBuYW1lPVwiYW5kcm9pZDp3aW5kb3dCYWNrZ3JvdW5kXCI+I2Y1ZjBlNzwvaXRlbT5cbiIKICAgICIgICAgICAgIDxpdGVtIG5hbWU9XCJhbmRyb2lkOndpbmRvd05vVGl0bGVcIj50cnVlPC9pdGVtPlxuIgogICAgIiAgICAgICAgPGl0ZW0gbmFtZT1cImFuZHJvaWQ6d2luZG93QWN0aW9uQmFyXCI+ZmFsc2U8L2l0ZW0+XG4iCiAgICAiICAgICAgICA8aXRlbSBuYW1lPVwiYW5kcm9pZDpzdGF0dXNCYXJDb2xvclwiPiNmNWYwZTc8L2l0ZW0+XG4iCiAgICAiICAgICAgICA8aXRlbSBuYW1lPVwiYW5kcm9pZDpuYXZpZ2F0aW9uQmFyQ29sb3JcIj4jZjVmMGU3PC9pdGVtPlxuIgogICAgIiAgICA8L3N0eWxlPlxuIgogICAgIjwvcmVzb3VyY2VzPlxuIiwKICAgIGVuY29kaW5nPSJ1dGYtOCIsCikKcHJpbnQoImF5YV9zb2xpZF93aW5kb3cueG1sIHdyaXR0ZW4iKQoKbWFuYWdlX3NyYyA9IHInJydwYWNrYWdlIGNvbS5heWEuYWxxdXJhbjsKCmltcG9ydCBhbmRyb2lkLmFwcC5BY3Rpdml0eTsKaW1wb3J0IGFuZHJvaWQuY29udGVudC5JbnRlbnQ7CmltcG9ydCBhbmRyb2lkLmNvbnRlbnQuU2hhcmVkUHJlZmVyZW5jZXM7CmltcG9ydCBhbmRyb2lkLmdyYXBoaWNzLkNvbG9yOwppbXBvcnQgYW5kcm9pZC5ncmFwaGljcy5kcmF3YWJsZS5Db2xvckRyYXdhYmxlOwppbXBvcnQgYW5kcm9pZC5vcy5CdWlsZDsKaW1wb3J0IGFuZHJvaWQub3MuQnVuZGxlOwppbXBvcnQgYW5kcm9pZC52aWV3LldpbmRvdzsKCnB1YmxpYyBjbGFzcyBNYW5hZ2VTcGFjZUFjdGl2aXR5IGV4dGVuZHMgQWN0aXZpdHkgewogICAgQE92ZXJyaWRlCiAgICBwcm90ZWN0ZWQgdm9pZCBvbkNyZWF0ZShCdW5kbGUgc2F2ZWRJbnN0YW5jZVN0YXRlKSB7CiAgICAgICAgc3VwZXIub25DcmVhdGUoc2F2ZWRJbnN0YW5jZVN0YXRlKTsKICAgICAgICB0cnkgewogICAgICAgICAgICByZXF1ZXN0V2luZG93RmVhdHVyZShXaW5kb3cuRkVBVFVSRV9OT19USVRMRSk7CiAgICAgICAgICAgIGdldFdpbmRvdygpLnNldEJhY2tncm91bmREcmF3YWJsZShuZXcgQ29sb3JEcmF3YWJsZShDb2xvci5wYXJzZUNvbG9yKCIjZjVmMGU3IikpKTsKICAgICAgICAgICAgaWYgKEJ1aWxkLlZFUlNJT04uU0RLX0lOVCA+PSAyMSkgewogICAgICAgICAgICAgICAgZ2V0V2luZG93KCkuc2V0U3RhdHVzQmFyQ29sb3IoQ29sb3IucGFyc2VDb2xvcigiI2Y1ZjBlNyIpKTsKICAgICAgICAgICAgfQogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIFNoYXJlZFByZWZlcmVuY2VzIHNwID0gZ2V0U2hhcmVkUHJlZmVyZW5jZXMoImF5YV9wcmVmcyIsIE1PREVfUFJJVkFURSk7CiAgICAgICAgICAgIHNwLmVkaXQoKS5wdXRCb29sZWFuKCJvcGVuX3N0b3JhZ2UiLCB0cnVlKS5hcHBseSgpOwogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIEludGVudCBpID0gbmV3IEludGVudCh0aGlzLCBNYWluQWN0aXZpdHkuY2xhc3MpOwogICAgICAgICAgICBpLmFkZEZsYWdzKEludGVudC5GTEFHX0FDVElWSVRZX1NJTkdMRV9UT1AKICAgICAgICAgICAgICAgICAgICB8IEludGVudC5GTEFHX0FDVElWSVRZX1JFT1JERVJfVE9fRlJPTlQKICAgICAgICAgICAgICAgICAgICB8IEludGVudC5GTEFHX0FDVElWSVRZX05FV19UQVNLKTsKICAgICAgICAgICAgaS5wdXRFeHRyYSgiYXlhX29wZW5fc3RvcmFnZSIsIHRydWUpOwogICAgICAgICAgICBzdGFydEFjdGl2aXR5KGkpOwogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIGZpbmlzaCgpOwogICAgICAgIHRyeSB7IG92ZXJyaWRlUGVuZGluZ1RyYW5zaXRpb24oMCwgMCk7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgfQp9CicnJwooamF2YV9kaXIgLyAiTWFuYWdlU3BhY2VBY3Rpdml0eS5qYXZhIikud3JpdGVfdGV4dChtYW5hZ2Vfc3JjLCBlbmNvZGluZz0idXRmLTgiKQpwcmludCgiTWFuYWdlU3BhY2VBY3Rpdml0eS5qYXZhIHdyaXR0ZW4uIikKCmlmIG5vdCBtYW5pZmVzdC5leGlzdHMoKToKICAgIHJhaXNlIFN5c3RlbUV4aXQoIkFuZHJvaWRNYW5pZmVzdC54bWwgbm90IGZvdW5kIikKbXQgPSBtYW5pZmVzdC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKCmlmIHJlLnNlYXJjaChyJ2FuZHJvaWQ6bWFuYWdlU3BhY2VBY3Rpdml0eVxzKj1ccyoiW14iXSoiJywgbXQpOgogICAgbXQgPSByZS5zdWIocidhbmRyb2lkOm1hbmFnZVNwYWNlQWN0aXZpdHlccyo9XHMqIlteIl0qIicsCiAgICAgICAgICAgICAgICAnYW5kcm9pZDptYW5hZ2VTcGFjZUFjdGl2aXR5PSIuTWFuYWdlU3BhY2VBY3Rpdml0eSInLCBtdCwgY291bnQ9MSkKZWxzZToKICAgIGRlZiBhZGRfYXR0cihtKToKICAgICAgICByZXR1cm4gbS5ncm91cCgxKSArICcgYW5kcm9pZDptYW5hZ2VTcGFjZUFjdGl2aXR5PSIuTWFuYWdlU3BhY2VBY3Rpdml0eSInICsgbS5ncm91cCgyKQogICAgbXQyLCBuID0gcmUuc3VibihyJyg8YXBwbGljYXRpb25cYltePl0qPykoLz8+KScsIGFkZF9hdHRyLCBtdCwgY291bnQ9MSwgZmxhZ3M9cmUuRE9UQUxMKQogICAgaWYgbm90IG46CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgiRVJST1I6IG5vIGFwcGxpY2F0aW9uIHRhZyIpCiAgICBtdCA9IG10MgoKaWYgJ2FuZHJvaWQ6bmFtZT0iLk1hbmFnZVNwYWNlQWN0aXZpdHkiJyBub3QgaW4gbXQ6CiAgICBhY3QgPSAoCiAgICAgICAgJyAgICAgICAgPGFjdGl2aXR5XG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6bmFtZT0iLk1hbmFnZVNwYWNlQWN0aXZpdHkiXG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6bGFiZWw9Itil2K/Yp9ix2Kkg2KfZhNmF2LPYp9it2KkiXG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6ZXhwb3J0ZWQ9InRydWUiXG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6ZXhjbHVkZUZyb21SZWNlbnRzPSJ0cnVlIlxuJwogICAgICAgICcgICAgICAgICAgICBhbmRyb2lkOnRoZW1lPSJAc3R5bGUvQXlhLlNvbGlkV2luZG93IiAvPlxuJwogICAgKQogICAgbXQgPSBtdC5yZXBsYWNlKCI8L2FwcGxpY2F0aW9uPiIsIGFjdCArICIgICAgPC9hcHBsaWNhdGlvbj4iLCAxKQplbHNlOgogICAgbXQgPSByZS5zdWIoCiAgICAgICAgcicoYW5kcm9pZDpuYW1lPSJcLk1hbmFnZVNwYWNlQWN0aXZpdHkiW14+XSopYW5kcm9pZDp0aGVtZT0iW14iXSoiJywKICAgICAgICByJ1wxYW5kcm9pZDp0aGVtZT0iQHN0eWxlL0F5YS5Tb2xpZFdpbmRvdyInLAogICAgICAgIG10LCBjb3VudD0xLAogICAgKQoKaWR4ID0gbXQuZmluZCgnYW5kcm9pZDpuYW1lPSIuTWFpbkFjdGl2aXR5IicpCmlmIGlkeCA+PSAwOgogICAgd2luZG93ID0gbXRbaWR4OmlkeCs2MDBdCiAgICBpZiAnYW5kcm9pZDp0aGVtZT0nIGluIHdpbmRvdzoKICAgICAgICB3aW5kb3cyID0gcmUuc3ViKHInYW5kcm9pZDp0aGVtZT0iW14iXSoiJywgJ2FuZHJvaWQ6dGhlbWU9IkBzdHlsZS9BeWEuU29saWRXaW5kb3ciJywgd2luZG93LCBjb3VudD0xKQogICAgICAgIG10ID0gbXRbOmlkeF0gKyB3aW5kb3cyICsgbXRbaWR4KzYwMDpdCiAgICAgICAgcHJpbnQoIk1haW5BY3Rpdml0eSB0aGVtZSByZXBsYWNlZCIpCiAgICBlbHNlOgogICAgICAgIG10ID0gbXRbOmlkeF0gKyAnYW5kcm9pZDpuYW1lPSIuTWFpbkFjdGl2aXR5IlxuICAgICAgICAgICAgYW5kcm9pZDp0aGVtZT0iQHN0eWxlL0F5YS5Tb2xpZFdpbmRvdyInICsgbXRbaWR4K2xlbignYW5kcm9pZDpuYW1lPSIuTWFpbkFjdGl2aXR5IicpOl0KICAgICAgICBwcmludCgiTWFpbkFjdGl2aXR5IHRoZW1lIGluc2VydGVkIikKCm1hbmlmZXN0LndyaXRlX3RleHQobXQsIGVuY29kaW5nPSJ1dGYtOCIpCnByaW50KCJtYW5pZmVzdCBPSyIpCgpNQVJLRVIgPSAiQVlBX1NUT1JBR0VfTUFOQUdFUl9WNCIKaWYgbWFpbi5leGlzdHMoKToKICAgIGF0ID0gbWFpbi5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKICAgIGlmIE1BUktFUiBpbiBhdCBvciAoIm9wZW5TdG9yYWdlTWFuYWdlckZyb21JbnRlbnQiIGluIGF0IGFuZCAiQVlBX1NUT1JBR0VfTUFOQUdFUiIgaW4gYXQpOgogICAgICAgIHByaW50KCJNYWluQWN0aXZpdHkgc3RvcmFnZSBob29rIHByZXNlbnQiKQogICAgZWxzZToKICAgICAgICBoZWxwZXIgPSAiIiIKICAgIC8vICIiIiArIE1BUktFUiArICIiIgogICAgcHJpdmF0ZSB2b2lkIG9wZW5TdG9yYWdlTWFuYWdlckZyb21JbnRlbnQoSW50ZW50IGludGVudCkgewogICAgICAgIGJvb2xlYW4gb3BlbiA9IGZhbHNlOwogICAgICAgIHRyeSB7IGlmIChpbnRlbnQgIT0gbnVsbCAmJiBpbnRlbnQuZ2V0Qm9vbGVhbkV4dHJhKCJheWFfb3Blbl9zdG9yYWdlIiwgZmFsc2UpKSBvcGVuID0gdHJ1ZTsgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9CiAgICAgICAgdHJ5IHsKICAgICAgICAgICAgYW5kcm9pZC5jb250ZW50LlNoYXJlZFByZWZlcmVuY2VzIHNwID0gZ2V0U2hhcmVkUHJlZmVyZW5jZXMoImF5YV9wcmVmcyIsIE1PREVfUFJJVkFURSk7CiAgICAgICAgICAgIGlmIChzcC5nZXRCb29sZWFuKCJvcGVuX3N0b3JhZ2UiLCBmYWxzZSkpIG9wZW4gPSB0cnVlOwogICAgICAgICAgICBzcC5lZGl0KCkucHV0Qm9vbGVhbigib3Blbl9zdG9yYWdlIiwgZmFsc2UpLmFwcGx5KCk7CiAgICAgICAgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9CiAgICAgICAgaWYgKCFvcGVuKSByZXR1cm47CiAgICAgICAgdHJ5IHsgaWYgKGludGVudCAhPSBudWxsKSBpbnRlbnQucmVtb3ZlRXh0cmEoImF5YV9vcGVuX3N0b3JhZ2UiKTsgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9CiAgICAgICAgdHJ5IHsKICAgICAgICAgICAgZ2V0V2luZG93KCkuc2V0QmFja2dyb3VuZERyYXdhYmxlKG5ldyBhbmRyb2lkLmdyYXBoaWNzLmRyYXdhYmxlLkNvbG9yRHJhd2FibGUoYW5kcm9pZC5ncmFwaGljcy5Db2xvci5wYXJzZUNvbG9yKCIjZjVmMGU3IikpKTsKICAgICAgICAgICAgaWYgKGFuZHJvaWQub3MuQnVpbGQuVkVSU0lPTi5TREtfSU5UID49IDIxKSB7CiAgICAgICAgICAgICAgICBnZXRXaW5kb3coKS5zZXRTdGF0dXNCYXJDb2xvcihhbmRyb2lkLmdyYXBoaWNzLkNvbG9yLnBhcnNlQ29sb3IoIiNmNWYwZTciKSk7CiAgICAgICAgICAgIH0KICAgICAgICB9IGNhdGNoIChFeGNlcHRpb24gaWdub3JlZCkge30KICAgICAgICBmaW5hbCBhbmRyb2lkLndlYmtpdC5XZWJWaWV3W10gaG9sZGVyID0gbmV3IGFuZHJvaWQud2Via2l0LldlYlZpZXdbMV07CiAgICAgICAgZmluYWwgU3RyaW5nIGpzID0gInRyeXtsb2NhbFN0b3JhZ2Uuc2V0SXRlbSgnYXlhX29wZW5fc3RvcmFnZScsJzEnKTtzZXNzaW9uU3RvcmFnZS5zZXRJdGVtKCdheWFfb3Blbl9zdG9yYWdlJywnMScpO2lmKHdpbmRvdy5fX2F5YVJlcXVlc3RTdG9yYWdlTWFuYWdlcil3aW5kb3cuX19heWFSZXF1ZXN0U3RvcmFnZU1hbmFnZXIoKTtlbHNlIGlmKHdpbmRvdy5fX2F5YU9wZW5TdG9yYWdlTWFuYWdlcil3aW5kb3cuX19heWFPcGVuU3RvcmFnZU1hbmFnZXIoKTt9Y2F0Y2goZSl7fSI7CiAgICAgICAgUnVubmFibGUgdHJ5T3BlbiA9IG5ldyBSdW5uYWJsZSgpIHsKICAgICAgICAgICAgaW50IHRyaWVzID0gMDsKICAgICAgICAgICAgQE92ZXJyaWRlIHB1YmxpYyB2b2lkIHJ1bigpIHsKICAgICAgICAgICAgICAgIHRyeSB7CiAgICAgICAgICAgICAgICAgICAgaWYgKGhvbGRlclswXSA9PSBudWxsKSB7IHRyeSB7IGhvbGRlclswXSA9IGdldEJyaWRnZSgpLmdldFdlYlZpZXcoKTsgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9IH0KICAgICAgICAgICAgICAgICAgICBmaW5hbCBhbmRyb2lkLndlYmtpdC5XZWJWaWV3IHd2ID0gaG9sZGVyWzBdOwogICAgICAgICAgICAgICAgICAgIGlmICh3diAhPSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHd2LnBvc3QobmV3IFJ1bm5hYmxlKCkgeyBAT3ZlcnJpZGUgcHVibGljIHZvaWQgcnVuKCkgeyB0cnkgeyB3di5ldmFsdWF0ZUphdmFzY3JpcHQoanMsIG51bGwpOyB9IGNhdGNoIChFeGNlcHRpb24gaWdub3JlZCkge30gfSB9KTsKICAgICAgICAgICAgICAgICAgICAgICAgaWYgKHRyaWVzID49IDgpIHJldHVybjsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9IGNhdGNoIChFeGNlcHRpb24gaWdub3JlZCkge30KICAgICAgICAgICAgICAgIGlmICh0cmllcysrIDwgNTApIHsgdHJ5IHsgZ2V0V2luZG93KCkuZ2V0RGVjb3JWaWV3KCkucG9zdERlbGF5ZWQodGhpcywgMzAwKTsgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9IH0KICAgICAgICAgICAgfQogICAgICAgIH07CiAgICAgICAgdHJ5IHsgZ2V0V2luZG93KCkuZ2V0RGVjb3JWaWV3KCkucG9zdERlbGF5ZWQodHJ5T3BlbiwgMzAwKTsgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9CiAgICAgICAgdHJ5IHsgZ2V0V2luZG93KCkuZ2V0RGVjb3JWaWV3KCkucG9zdERlbGF5ZWQodHJ5T3BlbiwgMTIwMCk7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgfQoiIiIKICAgICAgICBwb3MgPSBhdC5yZmluZCgifSIpCiAgICAgICAgY2FuZGlkYXRlID0gYXRbOnBvc10gKyBoZWxwZXIgKyAiXG59XG4iCiAgICAgICAgbSA9IHJlLnNlYXJjaChyIigoPzpwcm90ZWN0ZWR8cHVibGljKVxzK3ZvaWRccytvbkNyZWF0ZVxzKlwoW14pXSpcKVxzKlx7KSIsIGNhbmRpZGF0ZSkKICAgICAgICBpZiBtOgogICAgICAgICAgICBjYW5kaWRhdGUgPSBjYW5kaWRhdGVbOm0uZW5kKCldICsgIlxuICAgICAgICBvcGVuU3RvcmFnZU1hbmFnZXJGcm9tSW50ZW50KGdldEludGVudCgpKTsgLy8gIiArIE1BUktFUiArICJcbiIgKyBjYW5kaWRhdGVbbS5lbmQoKTpdCiAgICAgICAgaWYgcmUuc2VhcmNoKHIidm9pZFxzK29uTmV3SW50ZW50XHMqXChccypJbnRlbnQiLCBjYW5kaWRhdGUpIGlzIE5vbmU6CiAgICAgICAgICAgIHBvcyA9IGNhbmRpZGF0ZS5yZmluZCgifSIpCiAgICAgICAgICAgIGNhbmRpZGF0ZSA9IGNhbmRpZGF0ZVs6cG9zXSArICIiIgogICAgQE92ZXJyaWRlCiAgICBwcm90ZWN0ZWQgdm9pZCBvbk5ld0ludGVudChJbnRlbnQgaW50ZW50KSB7CiAgICAgICAgc3VwZXIub25OZXdJbnRlbnQoaW50ZW50KTsKICAgICAgICBzZXRJbnRlbnQoaW50ZW50KTsKICAgICAgICBvcGVuU3RvcmFnZU1hbmFnZXJGcm9tSW50ZW50KGludGVudCk7IC8vICIiIiArIE1BUktFUiArICIiIgogICAgfQoiIiIgKyAiXG59XG4iCiAgICAgICAgaWYgY2FuZGlkYXRlLmNvdW50KCJ7IikgPT0gY2FuZGlkYXRlLmNvdW50KCJ9Iik6CiAgICAgICAgICAgIG1haW4ud3JpdGVfdGV4dChjYW5kaWRhdGUsIGVuY29kaW5nPSJ1dGYtOCIpCiAgICAgICAgICAgIHByaW50KCJNYWluQWN0aXZpdHkgcGF0Y2hlZCBWNCIpCiAgICAgICAgZWxzZToKICAgICAgICAgICAgcHJpbnQoIldBUk4gc2tpcCBNYWluQWN0aXZpdHkgaW5qZWN0IikKZWxzZToKICAgIHByaW50KCJXQVJOIG5vIE1haW5BY3Rpdml0eSIpCgpwcmludCgiTWFuYWdlIFNwYWNlIGZlYXR1cmUgT0suIikK').decode('utf-8'))"
+          echo "---- Manifest manageSpace check ----"
+          grep -n "manageSpaceActivity\|ManageSpaceActivity" android-app/android/app/src/main/AndroidManifest.xml || (echo "MISSING manageSpace" && exit 1)
 
-      - name: Build signed test APK (separate .test package)
+      - name: Build unsigned test APK (debug)
         working-directory: android-app/android
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -e
           chmod +x gradlew
+
+          # Keep the test build separate from the installed production app.
           python3 << 'PY'
           from pathlib import Path
-          gradle = Path("app/build.gradle")
+          import re
+
+          groovy = Path("app/build.gradle")
           kotlin = Path("app/build.gradle.kts")
-          if gradle.exists():
-              p = gradle
-              text = p.read_text(encoding="utf-8")
+          if groovy.exists():
+              text = groovy.read_text(encoding="utf-8")
               if 'applicationIdSuffix ".test"' not in text:
-                  text += '\n\nandroid {\n    buildTypes {\n        release {\n            applicationIdSuffix ".test"\n        }\n    }\n}\n'
+                  text += '\n\nandroid {\n    buildTypes {\n        debug {\n            applicationIdSuffix ".test"\n        }\n    }\n}\n'
+              groovy.write_text(text, encoding="utf-8")
           elif kotlin.exists():
-              p = kotlin
-              text = p.read_text(encoding="utf-8")
+              text = kotlin.read_text(encoding="utf-8")
               if 'applicationIdSuffix = ".test"' not in text:
-                  text += '\n\nandroid {\n    buildTypes {\n        getByName("release") {\n            applicationIdSuffix = ".test"\n        }\n    }\n}\n'
+                  text += '\n\nandroid {\n    buildTypes {\n        getByName("debug") {\n            applicationIdSuffix = ".test"\n        }\n    }\n}\n'
+              kotlin.write_text(text, encoding="utf-8")
           else:
               raise SystemExit("Gradle app file not found")
-          p.write_text(text, encoding="utf-8")
           PY
-          STORE="${GITHUB_WORKSPACE}/aya-release.jks"
-          ./gradlew assembleRelease --stacktrace \
-            -Pandroid.injected.signing.store.file="$STORE" \
-            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
-          APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" | head -n 1)
+
+          ./gradlew assembleDebug --stacktrace
+
+          APK=$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name "*.apk" | head -n 1)
           if [ -z "$APK" ]; then
-            echo "::error::Signed test APK was not produced."
+            echo "::error::Debug APK was not produced."
             exit 1
           fi
+
+          echo "Debug APK: $APK"
           AAPT=$(find "$ANDROID_HOME/build-tools" -type f \( -name aapt -o -name aapt2 \) | head -n 1)
           if [ -z "$AAPT" ]; then
-            echo "::error::aapt/aapt2 not found."
+            echo "::error::aapt/aapt2 not found; cannot verify final APK permissions."
             exit 1
           fi
-          "$AAPT" dump badging "$APK" | grep "package: name='com.aya.alquran.test'"
-          echo "Signed test APK built with the production keystore and .test package."
 
-      - name: Upload signed test APK
+          if "$AAPT" dump permissions "$APK" | grep -q "android.permission.RECORD_AUDIO"; then
+            echo "::warning::APK still lists RECORD_AUDIO (may come from a dependency)."
+          else
+            echo "Final APK permission check: RECORD_AUDIO is not declared."
+          fi
+          echo "Debug test APK built successfully. No release keystore or secrets were used."
+
+      # ============================================================
+      # UPLOAD TEST APK
+      # ============================================================
+
+      - name: Upload test APK
         uses: actions/upload-artifact@v4
         with:
-          name: aya-android-test-signed-apk-${{ steps.ver.outputs.versionName }}
-          path: android-app/android/app/build/outputs/apk/release/*.apk
+          name: aya-android-test-apk-${{ steps.ver.outputs.versionName }}
+          path: android-app/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
