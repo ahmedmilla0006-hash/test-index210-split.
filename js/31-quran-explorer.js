@@ -25,6 +25,34 @@ body.interface-new #quranExplorerOverlay .qe-item{background:rgba(55,72,88,.58);
 body.interface-new #quranExplorerOverlay .qe-item:active{background:rgba(70,92,110,.78)}
 body.interface-new #quranExplorerOverlay .qe-note{color:rgba(230,238,244,.82)}
 body.interface-new #quranExplorerOverlay .qe-verse{border-color:rgba(200,220,235,.3);color:#f4f7f9}
+/* مطابقة دقيقة لزجاج القائمة الجانبية في الواجهة الجديدة */
+body.interface-new #quranExplorerOverlay{background:rgba(0,0,0,.20)}
+body.interface-new #quranExplorerOverlay .qe-box{
+  background:rgba(28,42,56,.72) !important;
+  border:1px solid rgba(200,220,235,.22) !important;
+  box-shadow:14px 0 40px rgba(0,0,0,.40),inset -1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter:blur(18px) saturate(135%) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(135%) !important;
+  color:#f4f7f9 !important;
+}
+body.interface-new #quranExplorerOverlay .qe-head h2{color:#fff !important}
+body.interface-new #quranExplorerOverlay .qe-tab,
+body.interface-new #quranExplorerOverlay .qe-item{
+  background:rgba(55,72,88,.40) !important;
+  border:1px solid rgba(200,220,235,.12) !important;
+  color:#f4f7f9 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+body.interface-new #quranExplorerOverlay .qe-tab.active{
+  background:var(--green,#168443) !important;color:#fff !important;border-color:rgba(125,222,168,.45) !important;
+}
+body.interface-new #quranExplorerOverlay .qe-item:active,
+body.interface-new #quranExplorerOverlay .qe-tab:active{background:rgba(70,92,110,.55) !important}
+body.interface-new #quranExplorerOverlay .qe-note{color:rgba(244,247,249,.78) !important}
+body.interface-new #quranExplorerOverlay .qe-verse{
+  background:rgba(55,72,88,.40) !important;border:1px solid rgba(200,220,235,.22) !important;color:#f4f7f9 !important;
+}
+body.interface-new.night-mode #quranExplorerOverlay .qe-box{background:rgba(20,30,40,.78) !important}
 body.interface-new.night-mode #quranExplorerOverlay .qe-box{background:rgba(20,30,40,.98);color:#f4f7f9}
 body.night-mode #quranExplorerOverlay .qe-box{background:#242424;color:#f2f2f2;border:1px solid #444}
 body.night-mode #quranExplorerOverlay .qe-tab{background:#383838;color:#e5e5e5;border:1px solid #505050}
