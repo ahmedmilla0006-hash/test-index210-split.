@@ -1,0 +1,47 @@
+/* ميزات خريطة القرآن وفهرس القصص ورحلة القرآن والويدجت — إضافة مستقلة */
+(function(){
+  'use strict';
+  const juzStarts=[1,22,42,62,82,102,122,142,162,182,202,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
+  const juzNames=['الأول','الثاني','الثالث','الرابع','الخامس','السادس','السابع','الثامن','التاسع','العاشر','الحادي عشر','الثاني عشر','الثالث عشر','الرابع عشر','الخامس عشر','السادس عشر','السابع عشر','الثامن عشر','التاسع عشر','العشرون','الحادي والعشرون','الثاني والعشرون','الثالث والعشرون','الرابع والعشرون','الخامس والعشرون','السادس والعشرون','السابع والعشرون','الثامن والعشرون','التاسع والعشرون','الثلاثون'];
+  const stories=[
+    ['آدم عليه السلام',[1,2,7,15,17,18,20]],['نوح عليه السلام',[7,10,11,23,26,54,71]],['هود عليه السلام',[7,11,26,46]],['صالح عليه السلام',[7,11,26,27]],['إبراهيم عليه السلام',[2,6,9,11,14,15,19,21,26,29,37,51,60]],['لوط عليه السلام',[7,11,15,26,29,37,54]],['يوسف عليه السلام',[12,40]],['موسى عليه السلام',[2,7,10,17,18,20,26,27,28,40,43,44,79]],['داود وسليمان عليهما السلام',[2,4,21,27,34,38]],['أصحاب الكهف',[18]],['ذو القرنين',[18]],['مريم وعيسى عليهما السلام',[3,4,5,19,23,43,57,61]],['أصحاب الأخدود',[85]],['أصحاب الفيل',[105]]
+  ];
+  const $=id=>document.getElementById(id);
+  const getSurahRows=()=>typeof surahs!=='undefined'&&Array.isArray(surahs)?surahs:[];
+  function pageForSurah(n){return (window.surahs&&surahs[n-1])?Number(surahs[n-1][1]):1;}
+  function goPage(n){try{if(typeof loadPage==='function')loadPage(Math.max(1,Math.min(604,Number(n)||1)));}catch(e){} close();}
+  function ensureUI(){
+    if($('quranExplorerOverlay'))return;
+    const menu=$('sideMenu'); if(!menu)return;
+    const btn=document.createElement('button');btn.className='menu-item';btn.id='quranExplorerButton';btn.type='button';btn.textContent='🧭 خريطة القرآن ورحلاته';
+    const before=$('searchButton'); if(before)menu.insertBefore(btn,before);else menu.appendChild(btn);
+    const style=document.createElement('style');style.textContent=`#quranExplorerOverlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px}#quranExplorerOverlay.open{display:flex}.qe-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--popup-bg,#fff);color:var(--text-color,#222);border-radius:18px;padding:16px;box-shadow:0 12px 40px #0005}.qe-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qe-head h2{font-size:19px;margin:0}.qe-close,.qe-tab,.qe-item,.qe-action{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}.qe-close{font-size:24px;background:transparent;color:inherit}.qe-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.qe-tab{background:#e8eee9;color:#174b2c}.qe-tab.active{background:#168443;color:white}.qe-content{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}.qe-item{background:rgba(22,132,67,.10);color:inherit;text-align:right;border:1px solid rgba(22,132,67,.2)}.qe-item small{display:block;opacity:.7;margin-top:4px}.qe-note{line-height:1.7;opacity:.8}.qe-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qe-action{background:#168443;color:white}.qe-verse{width:100%;min-height:70px;border-radius:10px;padding:10px;border:1px solid #aaa;background:transparent;color:inherit;font:inherit} `;document.head.appendChild(style);
+    const overlay=document.createElement('div');overlay.id='quranExplorerOverlay';overlay.innerHTML=`<section class="qe-box" role="dialog" aria-modal="true"><header class="qe-head"><h2>🧭 خريطة القرآن ورحلاته</h2><button class="qe-close" id="qeClose" aria-label="إغلاق">×</button></header><nav class="qe-tabs"><button class="qe-tab active" data-tab="map">خريطة القرآن</button><button class="qe-tab" data-tab="stories">قصص القرآن</button><button class="qe-tab" data-tab="journey">رحلة داخل القرآن</button><button class="qe-tab" data-tab="widget">الويدجت القرآني</button></nav><div id="qeContent"></div></section>`;
+    document.body.appendChild(overlay);
+    $('quranExplorerButton').addEventListener('click',()=>open('map'));
+    $('qeClose').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    overlay.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.tab)));
+  }
+  function open(tab){ensureUI();const ov=$('quranExplorerOverlay');if(!ov)return;ov.classList.add('open');ov.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));render(tab);}
+  function close(){const ov=$('quranExplorerOverlay');if(ov)ov.classList.remove('open');}
+  function render(tab){const host=$('qeContent');if(!host)return;
+    if(tab==='map'){
+      host.innerHTML='<p class="qe-note">اختر جزءًا أو سورة للانتقال مباشرة إلى موضعها في المصحف.</p><h3>الأجزاء</h3><div class="qe-content" id="qeJuz"></div><h3>السور</h3><div class="qe-content" id="qeSurahs"></div>';
+      juzStarts.forEach((p,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent='الجزء '+juzNames[i];b.addEventListener('click',()=>goPage(p));$('qeJuz').appendChild(b);});
+      getSurahRows().forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.innerHTML=`${i+1}. ${s[0]}<small>صفحة ${s[1]}</small>`;b.addEventListener('click',()=>goPage(s[1]));$('qeSurahs').appendChild(b);});
+    }else if(tab==='stories'){
+      host.innerHTML='<p class="qe-note">اختر قصة لعرض السور التي وردت فيها. مواضع السور هنا دليل تنقّل عام وليست حصرًا لكل الآيات.</p><div class="qe-content" id="qeStories"></div>';
+      stories.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeStories').appendChild(b);});
+    }else if(tab==='journey'){
+      host.innerHTML='<p class="qe-note">اختر قصة، ثم تنقّل بين السور التي وردت فيها.</p><div class="qe-content" id="qeJourneys"></div><div id="qeJourneyDetail"></div>';
+      stories.forEach(s=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeJourneys').appendChild(b);});
+    }else if(tab==='widget'){
+      const saved=JSON.parse(localStorage.getItem('ayaWidgetVerse')||'null');
+      host.innerHTML=`<p class="qe-note">اكتب نص آية تريد عرضها في ويدجت الشاشة الرئيسية، ثم اضغط حفظ. يتطلب ظهور الويدجت تثبيت نسخة Android التي تتضمن دعم الويدجت، ثم إضافته من قائمة الويدجت في الهاتف.</p><textarea class="qe-verse" id="qeWidgetText" placeholder="اكتب الآية هنا">${saved&&saved.text?saved.text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])):''}</textarea><div class="qe-actions"><button class="qe-action" id="qeWidgetSave">حفظ الآية للويدجت</button><button class="qe-action" id="qeWidgetClear">مسح الاختيار</button></div><p class="qe-note" id="qeWidgetStatus"></p>`;
+      $('qeWidgetSave').addEventListener('click',()=>{const text=$('qeWidgetText').value.trim();if(!text){$('qeWidgetStatus').textContent='اكتب نص الآية أولًا.';return;}const value={text,updated:Date.now()};localStorage.setItem('ayaWidgetVerse',JSON.stringify(value));try{if(window.AyaQuranWidget&&typeof window.AyaQuranWidget.setVerse==='function'){window.AyaQuranWidget.setVerse(text);$('qeWidgetStatus').textContent='تم إرسال الآية إلى ويدجت Android.';}else{$('qeWidgetStatus').textContent='حُفظت الآية داخل التطبيق. سيصلها الويدجت عند تثبيت نسخة Android الداعمة.';}}catch(e){$('qeWidgetStatus').textContent='حُفظت الآية داخل التطبيق.';}});
+      $('qeWidgetClear').addEventListener('click',()=>{localStorage.removeItem('ayaWidgetVerse');$('qeWidgetText').value='';try{if(window.AyaQuranWidget)window.AyaQuranWidget.setVerse('افتح تطبيق آية لاختيار آية');}catch(e){}$('qeWidgetStatus').textContent='تم مسح الآية المحفوظة.';});
+    }
+  }
+  function renderJourney(title,nums){const detail=$('qeJourneyDetail')||$('qeContent');detail.innerHTML=`<h3>${title}</h3><p class="qe-note">اضغط على اسم السورة للانتقال إلى بدايتها في المصحف.</p><div class="qe-content" id="qeJourneyItems"></div>`;nums.forEach(n=>{const rows=getSurahRows();const name=rows[n-1]?rows[n-1][0]:'سورة '+n;const b=document.createElement('button');b.className='qe-item';b.textContent=name;b.addEventListener('click',()=>goPage(pageForSurah(n)));$('qeJourneyItems').appendChild(b);});}
+  document.addEventListener('DOMContentLoaded',ensureUI);if(document.readyState!=='loading')ensureUI();
+})();
