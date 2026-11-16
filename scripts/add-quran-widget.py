@@ -65,9 +65,15 @@ public class AyaQuranWidgetBridge {
 """,encoding="utf-8")
 
 res=root/"res"
-(res/"layout").mkdir(parents=True,exist_ok=True); (res/"xml").mkdir(parents=True,exist_ok=True)
+(res/"layout").mkdir(parents=True,exist_ok=True); (res/"xml").mkdir(parents=True,exist_ok=True); (res/"drawable").mkdir(parents=True,exist_ok=True)
+(res/"drawable/aya_quran_widget_glass.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="22dp"/>
+    <gradient android:angle="135" android:startColor="#C51B2C38" android:centerColor="#B5223441" android:endColor="#A91A2B38"/>
+    <stroke android:width="1dp" android:color="#66FFFFFF"/>
+</shape>""",encoding="utf-8")
 (res/"layout/aya_quran_widget.xml").write_text("""<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/aya_widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:padding="12dp" android:background="#16803B">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/aya_widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:padding="12dp" android:background="@drawable/aya_quran_widget_glass">
 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="آية قرآنية" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="14sp" android:paddingBottom="5dp"/>
 <TextView android:id="@+id/aya_widget_verse" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="افتح تطبيق آية لاختيار آية قرآنية" android:textColor="#FFFFFF" android:textSize="17sp" android:maxLines="4" android:ellipsize="end"/>
 <TextView android:id="@+id/aya_widget_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:textColor="#E7F5EA" android:textSize="11sp" android:paddingTop="5dp"/>
