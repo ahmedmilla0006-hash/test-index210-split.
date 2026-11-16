@@ -23,7 +23,7 @@
     if(b) b.onclick=(event)=>{event.preventDefault();event.stopPropagation();open();};
     if(!$('ayaPrayerOverlay')){
       const ov=document.createElement('div');ov.className='popup-overlay';ov.id='ayaPrayerOverlay';
-      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">جارٍ تحديد المدينة…</div><div class="aya-prayer-status" id="ayaPrayerStatus">يتم تحديد المدينة عبر اتصال الإنترنت دون تشغيل GPS.</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث تلقائي</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="المدينة — مثل Ankara" autocomplete="address-level2"><input id="ayaPrayerCountryInput" placeholder="الدولة — مثل Turkey" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form><div class="aya-prayer-foot">طريقة الحساب: رئاسة الشؤون الدينية التركية (Diyanet). لا يحتاج التطبيق إلى إذن الموقع.</div></div>';
+      ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">مواقيت الصلاة</div><div class="aya-prayer-status" id="ayaPrayerStatus"></div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث المواقيت</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="المدينة — مثل Ankara" autocomplete="address-level2"><input id="ayaPrayerCountryInput" placeholder="الدولة — مثل Turkey" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form><div class="aya-prayer-foot">طريقة الحساب: رئاسة الشؤون الدينية التركية (Diyanet).</div></div>';
       document.body.appendChild(ov);
       const st=document.createElement('style');st.textContent=`
       #ayaPrayerOverlay{z-index:650;align-items:center;justify-content:center}
@@ -65,7 +65,7 @@
     return {timings:t,date:dateAtZone(zone||'Europe/Istanbul')};
   }
   async function loadAuto(force){
-    $('ayaPrayerStatus').textContent='جارٍ تحديد المدينة من عنوان IP…';
+    $('ayaPrayerStatus').textContent='جارٍ تحديث مواقيت الصلاة…';
     try{
       const r=await fetch('https://ipwho.is/?fields=success,city,region,country,latitude,longitude,timezone');
       if(!r.ok)throw Error('تعذر تحديد المدينة تلقائيًا');const g=await r.json();
