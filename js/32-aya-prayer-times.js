@@ -118,7 +118,7 @@
     }catch(_){const d=new Date();return d.getHours()*3600+d.getMinutes()*60+d.getSeconds();}
   }
   function prayerSeconds(key){
-    const m=String(state.timings?.[key]||'').match(/^(\\d{1,2}):(\\d{2})/);
+    const m=String(state.timings?.[key]||'').match(/^(\d{1,2}):(\d{2})/);
     return m?Number(m[1])*3600+Number(m[2])*60:null;
   }
   function updatePrayerCountdown(){
