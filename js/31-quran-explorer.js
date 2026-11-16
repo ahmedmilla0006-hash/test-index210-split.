@@ -16,6 +16,16 @@
     const btn=document.createElement('button');btn.className='menu-item';btn.id='quranExplorerButton';btn.type='button';btn.textContent='🧭 خريطة القرآن ورحلاته';
     const before=$('searchButton'); if(before)menu.insertBefore(btn,before);else menu.appendChild(btn);
     const style=document.createElement('style');style.textContent=`#quranExplorerOverlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px}#quranExplorerOverlay.open{display:flex}.qe-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--popup-bg,#fff);color:var(--text-color,#222);border-radius:18px;padding:16px;box-shadow:0 12px 40px #0005}.qe-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qe-head h2{font-size:19px;margin:0}.qe-close,.qe-tab,.qe-item,.qe-action{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}.qe-close{font-size:24px;background:transparent;color:inherit}.qe-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.qe-tab{background:#e8eee9;color:#174b2c}.qe-tab.active{background:#168443;color:white}.qe-content{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}.qe-item{background:rgba(22,132,67,.10);color:inherit;text-align:right;border:1px solid rgba(22,132,67,.2)}.qe-item small{display:block;opacity:.7;margin-top:4px}.qe-note{line-height:1.7;opacity:.8}.qe-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qe-action{background:#168443;color:white}.qe-verse{width:100%;min-height:70px;border-radius:10px;padding:10px;border:1px solid #aaa;background:transparent;color:inherit;font:inherit}
+/* الواجهة الزجاجية الجديدة: اجعل الخريطة تتبعها حتى في الوضع النهاري */
+body.interface-new #quranExplorerOverlay .qe-box{background:rgba(28,42,56,.96);color:#f4f7f9;border:1px solid rgba(200,220,235,.22);box-shadow:0 16px 48px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.06)}
+body.interface-new #quranExplorerOverlay .qe-head h2{color:#fff}
+body.interface-new #quranExplorerOverlay .qe-tab{background:rgba(55,72,88,.72);color:#f4f7f9;border:1px solid rgba(200,220,235,.16)}
+body.interface-new #quranExplorerOverlay .qe-tab.active{background:#50c878;color:#0a2018;border-color:#50c878}
+body.interface-new #quranExplorerOverlay .qe-item{background:rgba(55,72,88,.58);color:#f4f7f9;border:1px solid rgba(200,220,235,.16)}
+body.interface-new #quranExplorerOverlay .qe-item:active{background:rgba(70,92,110,.78)}
+body.interface-new #quranExplorerOverlay .qe-note{color:rgba(230,238,244,.82)}
+body.interface-new #quranExplorerOverlay .qe-verse{border-color:rgba(200,220,235,.3);color:#f4f7f9}
+body.interface-new.night-mode #quranExplorerOverlay .qe-box{background:rgba(20,30,40,.98);color:#f4f7f9}
 body.night-mode #quranExplorerOverlay .qe-box{background:#242424;color:#f2f2f2;border:1px solid #444}
 body.night-mode #quranExplorerOverlay .qe-tab{background:#383838;color:#e5e5e5;border:1px solid #505050}
 body.night-mode #quranExplorerOverlay .qe-tab.active{background:var(--green,#16803b);color:#fff;border-color:var(--green,#16803b)}
