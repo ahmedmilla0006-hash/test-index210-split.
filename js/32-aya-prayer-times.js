@@ -208,10 +208,21 @@
     if(!city||!country){$('ayaPrayerStatus').textContent='اكتب اسم المدينة والدولة.';return}
     $('ayaPrayerStatus').textContent='جارٍ جلب مواقيت '+city+'…';
     try{
+      // نستخدم إحداثيات نتيجة البحث الجغرافي للمدينة نفسها، ولا نعتمد على
+      // إحداثيات meta القادمة من خدمة المواقيت لحساب اتجاه القبلة.
+      const geoUrl='https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=10&language=ar&format=json';
+      const geoResponse=await fetch(geoUrl);
+      if(!geoResponse.ok)throw Error('تعذر تحديد إحداثيات المدينة؛ تحقق من كتابة الاسم.');
+      const geoData=await geoResponse.json();
+      const geoResults=geoData.results||[];
+      const norm=v=>String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+      const place=geoResults.find(x=>norm(x.country)===norm(country))||geoResults[0];
+      if(!place||!Number.isFinite(Number(place.latitude))||!Number.isFinite(Number(place.longitude)))throw Error('لم يتم العثور على إحداثيات المدينة. جرّب اختيارها من الاقتراحات.');
       const url='https://api.aladhan.com/v1/timingsByCity?city='+encodeURIComponent(city)+'&country='+encodeURIComponent(country)+'&method=13';
-      const r=await fetch(url);if(!r.ok)throw Error('تعذر جلب المواقيت');const j=await r.json();if(j.code!==200||!j.data?.timings)throw Error('لم يتم العثور على المدينة');
+      const r=await fetch(url);if(!r.ok)throw Error('تعذر جلب المواقيت');const j=await r.json();if(j.code!==200||!j.data?.timings)throw Error('لم يتم العثور على المواقيت لهذه المدينة');
       const t={};Object.keys(names).forEach(k=>t[k]=String(j.data.timings[k]||'').split(' ')[0]);
-      state={...state,mode:'manual',city,country,timezone:j.data.meta?.timezone||'',latitude:j.data.meta?.latitude,longitude:j.data.meta?.longitude,timings:t,date:dateAtZone(j.data.meta?.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone),updated:Date.now()};
+      const zone=place.timezone||j.data.meta?.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone;
+      state={...state,mode:'manual',city:place.name||city,country:place.country||country,timezone:zone,latitude:Number(place.latitude),longitude:Number(place.longitude),timings:t,date:dateAtZone(zone),updated:Date.now()};
       save();$('ayaPrayerManual').hidden=true;render();
     }catch(e){$('ayaPrayerStatus').textContent=e.message||'حدث خطأ أثناء البحث عن المدينة'}
   }
