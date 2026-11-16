@@ -53,6 +53,40 @@
       body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-box{background:#242424;color:#f2f2f2;border-color:#444}
       body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-item{background:#303030;color:#f2f2f2;border-color:#505050}
       body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-item b,body.night-mode:not(.interface-new) #ayaPrayerOverlay .aya-prayer-item strong{color:#f2f2f2}
+
+      /* إصلاح تباين النصوص في المظهر الزجاجي ومنع ألوان القالب من تغميقها */
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box,
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box *{
+        color:#f5f8fb !important;
+        opacity:1 !important;
+        text-shadow:none !important;
+      }
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box{
+        background:rgba(24,39,53,.96) !important;
+        border:1px solid rgba(220,235,245,.28) !important;
+        backdrop-filter:blur(22px) saturate(145%) !important;
+        -webkit-backdrop-filter:blur(22px) saturate(145%) !important;
+      }
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-prayer-city,
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .popup-header h2{
+        color:#55d889 !important;
+      }
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-prayer-status,
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-qibla-status,
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-prayer-foot{
+        color:#dce6ed !important;
+      }
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-prayer-item{
+        background:rgba(255,255,255,.09) !important;
+        border-color:rgba(220,235,245,.25) !important;
+      }
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-prayer-item b,
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box .aya-prayer-item strong{
+        color:#ffffff !important;
+      }
+      body.interface-new #ayaPrayerOverlay .aya-prayer-box button{
+        color:#ffffff !important;
+      }
       `;document.head.appendChild(st);
       $('ayaPrayerClose').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close()});$('ayaQiblaToggle').onclick=async()=>{const panel=$('ayaQiblaPanel');panel.hidden=!panel.hidden;if(!panel.hidden)await startQibla();};
       $('ayaPrayerRefresh').onclick=()=>{state.mode='auto';save();loadAuto(true)};
