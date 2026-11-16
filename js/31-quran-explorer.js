@@ -197,7 +197,7 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       $('qeJourneyItems').appendChild(b);
     });
   }
-const detail=$('qeJourneyDetail')||$('qeContent');detail.innerHTML=`<h3>${title}</h3><p class="qe-note">اضغط على اسم السورة للانتقال إلى بدايتها في المصحف.</p><div class="qe-content" id="qeJourneyItems"></div>`;nums.forEach(n=>{const rows=getSurahRows();const name=rows[n-1]?rows[n-1][0]:'سورة '+n;const b=document.createElement('button');b.className='qe-item';b.textContent=name;b.addEventListener('click',()=>goPage(pageForSurah(n)));$('qeJourneyItems').appendChild(b);});}
+
   document.addEventListener('DOMContentLoaded',ensureUI);if(document.readyState!=='loading')ensureUI();
 })();
 
