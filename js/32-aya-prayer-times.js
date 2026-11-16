@@ -58,7 +58,7 @@
     const ts=Math.floor(Date.now()/1000),url='https://api.aladhan.com/v1/timings/'+ts+'?latitude='+encodeURIComponent(lat)+'&longitude='+encodeURIComponent(lon)+'&method=13&timezonestring='+encodeURIComponent(zone||'Europe/Istanbul');
     const res=await fetch(url);if(!res.ok)throw Error('تعذر جلب مواقيت الصلاة');const j=await res.json();if(j.code!==200||!j.data?.timings)throw Error('استجابة مواقيت الصلاة غير صالحة');
     const t={};Object.keys(names).forEach(k=>t[k]=String(j.data.timings[k]||'').split(' ')[0]);
-    return {timings:t,date:j.data.date?.gregorian?.date||dateAtZone(zone||'Europe/Istanbul')};
+    return {timings:t,date:dateAtZone(zone||'Europe/Istanbul')};
   }
   async function loadAuto(force){
     $('ayaPrayerStatus').textContent='جارٍ تحديد المدينة من عنوان IP…';
@@ -79,7 +79,7 @@
       const url='https://api.aladhan.com/v1/timingsByCity?city='+encodeURIComponent(city)+'&country='+encodeURIComponent(country)+'&method=13';
       const r=await fetch(url);if(!r.ok)throw Error('تعذر جلب المواقيت');const j=await r.json();if(j.code!==200||!j.data?.timings)throw Error('لم يتم العثور على المدينة');
       const t={};Object.keys(names).forEach(k=>t[k]=String(j.data.timings[k]||'').split(' ')[0]);
-      state={...state,mode:'manual',city,country,timezone:j.data.meta?.timezone||'',latitude:j.data.meta?.latitude,longitude:j.data.meta?.longitude,timings:t,date:j.data.date?.gregorian?.date||new Date().toLocaleDateString('en-CA'),updated:Date.now()};
+      state={...state,mode:'manual',city,country,timezone:j.data.meta?.timezone||'',latitude:j.data.meta?.latitude,longitude:j.data.meta?.longitude,timings:t,date:dateAtZone(j.data.meta?.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone),updated:Date.now()};
       save();$('ayaPrayerManual').hidden=true;render();
     }catch(e){$('ayaPrayerStatus').textContent=e.message||'حدث خطأ أثناء البحث عن المدينة'}
   }
