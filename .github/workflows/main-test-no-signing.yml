@@ -920,25 +920,35 @@ jobs:
           set -e
           chmod +x gradlew
 
-          # Keep the test build separate from the installed production app.
+          # Give the test APK its own application ID so it installs beside the production app.
+          # Keep the Java namespace/package (com.aya.alquran) unchanged for MainActivity and the widget.
           python3 << 'PY'
           from pathlib import Path
           import re
 
-          groovy = Path("app/build.gradle")
-          kotlin = Path("app/build.gradle.kts")
-          if groovy.exists():
-              text = groovy.read_text(encoding="utf-8")
-              if 'applicationIdSuffix ".test"' not in text:
-                  text += '\n\nandroid {\n    buildTypes {\n        debug {\n            applicationIdSuffix ".test"\n        }\n    }\n}\n'
-              groovy.write_text(text, encoding="utf-8")
-          elif kotlin.exists():
-              text = kotlin.read_text(encoding="utf-8")
-              if 'applicationIdSuffix = ".test"' not in text:
-                  text += '\n\nandroid {\n    buildTypes {\n        getByName("debug") {\n            applicationIdSuffix = ".test"\n        }\n    }\n}\n'
-              kotlin.write_text(text, encoding="utf-8")
-          else:
+          gradle = Path("app/build.gradle")
+          if not gradle.exists():
+              gradle = Path("app/build.gradle.kts")
+          if not gradle.exists():
               raise SystemExit("Gradle app file not found")
+
+          text = gradle.read_text(encoding="utf-8")
+          if gradle.name.endswith(".kts"):
+              pattern = r'applicationId\\s*=\\s*"[^"]+"'
+              replacement = 'applicationId = "com.aya.alquran.test"'
+          else:
+              pattern = r'applicationId\\s+"[^"]+"'
+              replacement = 'applicationId "com.aya.alquran.test"'
+
+          text, count = re.subn(pattern, replacement, text, count=1)
+          if count != 1:
+              raise SystemExit("Could not safely locate defaultConfig applicationId")
+          if "namespace" in text and "com.aya.alquran" not in text:
+              raise SystemExit("Unexpected Android namespace; refusing to alter Java package")
+
+          text = re.sub(r'applicationIdSuffix\\s*=*\\s*"\\.test"', "", text)
+          gradle.write_text(text, encoding="utf-8")
+          print("Test applicationId set to com.aya.alquran.test; Java namespace preserved.")
           PY
 
           ./gradlew assembleDebug --stacktrace
