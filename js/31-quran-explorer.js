@@ -50,8 +50,8 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       host.innerHTML='<p class="qe-note">اختر قصة، ثم اختر الحدث الذي تريد الوصول إليه. سينتقل المصحف إلى صفحة الآية المحددة.</p><div class="qe-content" id="qeStories"></div><div id="qeStoryDetail"></div>';
       storyDetails.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s.title;$('qeStories').appendChild(b);b.addEventListener('click',()=>renderStoryDetail(s));});
     }else if(tab==='journey'){
-      host.innerHTML='<p class="qe-note">اختر قصة، ثم تنقّل بين السور التي وردت فيها.</p><div class="qe-content" id="qeJourneys"></div><div id="qeJourneyDetail"></div>';
-      stories.forEach(s=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeJourneys').appendChild(b);});
+      host.innerHTML='<p class="qe-note">اختر رحلة موضوعية، ثم تنقّل بين محطاتها القرآنية. عند اختيار محطة ينتقل المصحف ومشغل التلاوة إلى الآية المحددة.</p><div class="qe-content" id="qeJourneys"></div><div id="qeJourneyDetail"></div>';
+      journeyDetails.forEach(j=>{const b=document.createElement('button');b.className='qe-item';b.textContent=j.title;$('qeJourneys').appendChild(b);b.addEventListener('click',()=>renderJourney(j));});
     }else if(tab==='widget'){
       const saved=JSON.parse(localStorage.getItem('ayaWidgetVerse')||'null');
       const details=saved&&saved.surah?('السورة: '+(saved.surahName||saved.surah)+' • الآية: '+saved.ayah+' • الصفحة: '+saved.page):'سيتم تحديث الويدجت تلقائيًا عند انتقال التظليل إلى آية جديدة.';
@@ -136,7 +136,40 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       }
     }catch(e){alert('تعذر الوصول إلى موضع الآية. حاول مرة أخرى.');}
   }
-  function renderJourney(title,nums){const detail=$('qeJourneyDetail')||$('qeContent');detail.innerHTML=`<h3>${title}</h3><p class="qe-note">اضغط على اسم السورة للانتقال إلى بدايتها في المصحف.</p><div class="qe-content" id="qeJourneyItems"></div>`;nums.forEach(n=>{const rows=getSurahRows();const name=rows[n-1]?rows[n-1][0]:'سورة '+n;const b=document.createElement('button');b.className='qe-item';b.textContent=name;b.addEventListener('click',()=>goPage(pageForSurah(n)));$('qeJourneyItems').appendChild(b);});}
+  const journeyDetails=[
+    {title:'رحلة الإيمان والتوحيد',events:[
+      ['التفكر في خلق السماوات والأرض',3,190],['آيات الله في اختلاف الليل والنهار',2,164],['الدعوة إلى عبادة الله وحده',2,21],['الله لا إله إلا هو الحي القيوم',2,255],['إخلاص العبادة لله',39,2],['مثل كلمة التوحيد والكلمة الطيبة',14,24],['الثبات على الإيمان',41,30]
+    ]},
+    {title:'رحلة التوبة والرجوع إلى الله',events:[
+      ['النهي عن القنوط من رحمة الله',39,53],['دعوة المؤمنين إلى التوبة النصوح',66,8],['اعتراف آدم وزوجه وطلب المغفرة',7,23],['توبة يونس وتسبيحه في الظلمات',21,87],['توبة الثلاثة الذين خُلّفوا',9,118],['قبول التوبة عن عباده',42,25],['الاستغفار وطلب المغفرة',3,135]
+    ]},
+    {title:'رحلة الصبر والثبات',events:[
+      ['الاستعانة بالصبر والصلاة',2,153],['الابتلاء بالخوف والجوع ونقص الأموال',2,155],['بشارة الصابرين',2,156],['وصية لقمان لابنه بالصبر',31,17],['صبر أيوب ورفع الضر عنه',21,83],['ثبات أصحاب الأخدود',85,7],['جزاء الصابرين بغير حساب',39,10]
+    ]},
+    {title:'رحلة الأنبياء والرسالة',events:[
+      ['دعوة نوح قومه',71,1],['دعوة إبراهيم إلى التوحيد',21,52],['مناجاة موسى وتكليفه بالرسالة',20,11],['دعوة هود إلى عبادة الله',7,65],['دعوة صالح لقومه',7,73],['دعوة عيسى وبشارة رسالته',3,49],['خاتم النبيين محمد ﷺ',33,40]
+    ]},
+    {title:'رحلة الآخرة والبعث والحساب',events:[
+      ['كل نفس ذائقة الموت',3,185],['النفخ في الصور',39,68],['البعث من القبور',36,51],['عرض الأعمال والكتاب',18,49],['الميزان والعدل يوم القيامة',21,47],['مشهد الحساب',84,7],['مصير أهل الجنة',3,133],['التحذير من النار',2,24]
+    ]},
+    {title:'رحلة الهداية والاستقامة',events:[
+      ['طلب الهداية إلى الصراط المستقيم',1,6],['القرآن هدى للمتقين',2,2],['اتباع أحسن ما أنزل',39,55],['الاستقامة وعدم الطغيان',11,112],['التمسك بحبل الله',3,103],['العمل الصالح والإيمان',103,3],['الدعاء بالثبات على الهداية',3,8]
+    ]},
+    {title:'رحلة الأخلاق والعمل الصالح',events:[
+      ['البر والإحسان إلى الوالدين',17,23],['العدل والإحسان',16,90],['الوفاء بالعهد',17,34],['اجتناب السخرية والغيبة',49,11],['قولوا للناس حسنًا',2,83],['التعاون على البر والتقوى',5,2],['المسابقة إلى الخيرات',2,148]
+    ]}
+  ];
+  function renderJourney(journey){
+    const detail=$('qeJourneyDetail')||$('qeContent');
+    detail.innerHTML='<h3>'+journey.title+'</h3><p class="qe-note">هذه محطات مختارة للتدبر في الموضوع، وليست حصرًا لكل الآيات المتعلقة به. اضغط على المحطة لفتح موضعها في المصحف ومزامنة مشغل التلاوة.</p><div class="qe-content" id="qeJourneyItems"></div>';
+    journey.events.forEach(ev=>{
+      const b=document.createElement('button');b.className='qe-item';
+      b.innerHTML=ev[0]+'<small>سورة '+(getSurahRows()[ev[1]-1]?.[0]||ev[1])+' • الآية '+ev[2]+'</small>';
+      b.addEventListener('click',()=>goToStoryAyah(ev[1],ev[2]));
+      $('qeJourneyItems').appendChild(b);
+    });
+  }
+const detail=$('qeJourneyDetail')||$('qeContent');detail.innerHTML=`<h3>${title}</h3><p class="qe-note">اضغط على اسم السورة للانتقال إلى بدايتها في المصحف.</p><div class="qe-content" id="qeJourneyItems"></div>`;nums.forEach(n=>{const rows=getSurahRows();const name=rows[n-1]?rows[n-1][0]:'سورة '+n;const b=document.createElement('button');b.className='qe-item';b.textContent=name;b.addEventListener('click',()=>goPage(pageForSurah(n)));$('qeJourneyItems').appendChild(b);});}
   document.addEventListener('DOMContentLoaded',ensureUI);if(document.readyState!=='loading')ensureUI();
 })();
 
