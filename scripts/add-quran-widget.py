@@ -167,3 +167,7 @@ if ".AyaMiniMushafWidgetProvider" not in mt:
  mt=mt.replace("</application>",receiver+"</application>")
  manifest.write_text(mt,encoding="utf-8")
 print("Quran widget Android files and intent bridge generated.")
+
+# Add adhan scheduling through the existing Android build integration.
+import runpy
+runpy.run_path(str(Path(__file__).with_name('add-adhan-notifications.py')), run_name='__main__')
