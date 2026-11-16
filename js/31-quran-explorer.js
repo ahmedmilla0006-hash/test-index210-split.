@@ -80,6 +80,23 @@ body.night-mode #quranExplorerOverlay .qe-tab.active{background:var(--green,#168
 body.night-mode #quranExplorerOverlay .qe-item{background:#303a32;color:#f1f1f1;border-color:#49634f}
 body.night-mode #quranExplorerOverlay .qe-verse{border-color:#555;color:#f2f2f2}
 body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
+/* الثيم الكلاسيكي: ألوانه الخاصة دون تأثير الزجاج الخاص بالثيم الجديد */
+body.interface-old #quranExplorerOverlay{background:rgba(0,0,0,.55)}
+body.interface-old #quranExplorerOverlay .qe-box{background:#fff !important;color:#222 !important;border:1px solid #ddd !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:0 12px 40px #0004 !important}
+body.interface-old #quranExplorerOverlay .qe-head h2{color:inherit !important}
+body.interface-old #quranExplorerOverlay .qe-tab{background:#e8eee9 !important;color:#174b2c !important;border:1px solid #d5e2d8 !important;box-shadow:none !important}
+body.interface-old #quranExplorerOverlay .qe-tab.active{background:#168443 !important;color:#fff !important}
+body.interface-old #quranExplorerOverlay .qe-item{background:rgba(22,132,67,.08) !important;color:#222 !important;border:1px solid rgba(22,132,67,.2) !important;box-shadow:none !important}
+body.interface-old #quranExplorerOverlay .qe-verse{background:#fff !important;color:#222 !important;border:1px solid #ccc !important}
+body.interface-old #quranExplorerOverlay .qe-note{color:#555 !important}
+body.interface-old #quranExplorerOverlay .qe-current-position{background:rgba(22,132,67,.07);border-color:rgba(22,132,67,.3)}
+body.interface-old.night-mode #quranExplorerOverlay{background:rgba(0,0,0,.72)}
+body.interface-old.night-mode #quranExplorerOverlay .qe-box{background:#242424 !important;color:#f2f2f2 !important;border-color:#444 !important}
+body.interface-old.night-mode #quranExplorerOverlay .qe-tab{background:#383838 !important;color:#e5e5e5 !important;border-color:#505050 !important}
+body.interface-old.night-mode #quranExplorerOverlay .qe-tab.active{background:var(--green,#16803b) !important;color:#fff !important}
+body.interface-old.night-mode #quranExplorerOverlay .qe-item{background:#303a32 !important;color:#f1f1f1 !important;border-color:#49634f !important}
+body.interface-old.night-mode #quranExplorerOverlay .qe-verse{background:#303030 !important;color:#f2f2f2 !important;border-color:#555 !important}
+body.interface-old.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0 !important}
 `;document.head.appendChild(style);
     const positionStyle=document.createElement('style');
     positionStyle.textContent='.qe-current-position{border:1px solid rgba(22,132,67,.35);background:rgba(22,132,67,.08);border-radius:14px;padding:12px;margin:10px 0 16px}.qe-current-title{font-weight:700;margin-bottom:6px}.qe-current-meta{line-height:1.8;margin-bottom:10px}';
