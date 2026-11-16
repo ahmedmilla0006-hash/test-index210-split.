@@ -11,12 +11,16 @@
   const dateAtZone=zone=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}catch(_){return new Date().toISOString().slice(0,10)}};
   const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   function installUI(){
-    if(!$('ayaPrayerTimesButton')){
-      const menu=$('sideMenu'); if(menu){
-        const b=document.createElement('button');b.type='button';b.className='menu-item';b.id='ayaPrayerTimesButton';b.textContent='🕌 مواقيت الصلاة';b.addEventListener('click',()=>open());
-        const anchor=$('downloadsButton'); if(anchor&&anchor.parentNode===menu) anchor.insertAdjacentElement('afterend',b); else menu.insertBefore(b,menu.firstChild);
-      }
+    const menu=$('sideMenu');
+    let b=$('ayaPrayerTimesButton');
+    if(!b&&menu){
+      b=document.createElement('button');
+      b.type='button';b.className='menu-item';b.id='ayaPrayerTimesButton';b.textContent='🕌 مواقيت الصلاة';
+      const anchor=$('downloadsButton');
+      if(anchor&&anchor.parentNode===menu) anchor.insertAdjacentElement('afterend',b);
+      else menu.insertBefore(b,menu.firstChild);
     }
+    if(b) b.onclick=(event)=>{event.preventDefault();event.stopPropagation();open();};
     if(!$('ayaPrayerOverlay')){
       const ov=document.createElement('div');ov.className='popup-overlay';ov.id='ayaPrayerOverlay';
       ov.innerHTML='<div class="popup-box aya-prayer-box"><div class="popup-header"><h2>🕌 مواقيت الصلاة</h2><button type="button" class="popup-close" id="ayaPrayerClose">✕</button></div><div class="aya-prayer-city" id="ayaPrayerCity">جارٍ تحديد المدينة…</div><div class="aya-prayer-status" id="ayaPrayerStatus">يتم تحديد المدينة عبر اتصال الإنترنت دون تشغيل GPS.</div><div class="aya-prayer-grid" id="ayaPrayerGrid"></div><div class="aya-prayer-actions"><button type="button" id="ayaPrayerRefresh">تحديث تلقائي</button><button type="button" id="ayaPrayerManualToggle">اختيار مدينة يدويًا</button></div><form id="ayaPrayerManual" hidden><input id="ayaPrayerCityInput" placeholder="المدينة — مثل Ankara" autocomplete="address-level2"><input id="ayaPrayerCountryInput" placeholder="الدولة — مثل Turkey" autocomplete="country-name"><button type="submit">اعتماد المدينة</button><button type="button" id="ayaPrayerAuto">العودة للتحديد التلقائي</button></form><div class="aya-prayer-foot">طريقة الحساب: رئاسة الشؤون الدينية التركية (Diyanet). لا يحتاج التطبيق إلى إذن الموقع.</div></div>';
