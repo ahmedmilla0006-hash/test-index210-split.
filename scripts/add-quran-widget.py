@@ -114,7 +114,7 @@ if "pendingSurah" not in code:
  code=code.replace(anchor,anchor+"\n        "+addition,1)
 activity.write_text(code,encoding="utf-8")
 
-// الويدجت الثاني: مصحف مصغّر مستقل عن الويدجت القرآني الحالي.
+# الويدجت الثاني: مصحف مصغّر مستقل عن الويدجت القرآني الحالي.
 (java / "AyaMiniMushafWidgetProvider.java").write_text("""package com.aya.alquran;
 import android.appwidget.AppWidgetProvider;
 import android.appwidget.AppWidgetManager;
