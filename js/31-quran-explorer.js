@@ -15,14 +15,14 @@
     const menu=$('sideMenu'); if(!menu)return;
     const btn=document.createElement('button');btn.className='menu-item';btn.id='quranExplorerButton';btn.type='button';btn.textContent='🧭 خريطة القرآن ورحلاته';
     const before=$('searchButton'); if(before)menu.insertBefore(btn,before);else menu.appendChild(btn);
-    const style=document.createElement('style');style.textContent=`#quranExplorerOverlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px}#quranExplorerOverlay.open{display:flex}.qe-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--popup-bg,#fff);color:var(--text-color,#222);border-radius:18px;padding:16px;box-shadow:0 12px 40px #0005}.qe-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qe-head h2{font-size:19px;margin:0}.qe-close,.qe-tab,.qe-item,.qe-action{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}.qe-close{font-size:24px;background:transparent;color:inherit}.qe-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.qe-tab{background:#e8eee9;color:#174b2c}.qe-tab.active{background:#168443;color:white}.qe-content{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}.qe-item{background:rgba(22,132,67,.10);color:inherit;text-align:right;border:1px solid rgba(22,132,67,.2)}.qe-item small{display:block;opacity:.7;margin-top:4px}.qe-note{line-height:1.7;opacity:.8}.qe-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qe-action{background:#168443;color:white}.qe-verse{width:100%;min-height:70px;border-radius:10px;padding:10px;border:1px solid #aaa;background:transparent;color:inherit;font:inherit}
+    const style=document.createElement('style');style.textContent=`#quranExplorerOverlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:14px}#quranExplorerOverlay.open{display:flex}.qe-box{width:min(620px,100%);max-height:88vh;overflow:auto;background:var(--popup-bg,#fff);color:var(--text-color,#222);border-radius:18px;padding:16px;box-shadow:0 12px 40px #0005}.qe-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.qe-head h2{font-size:19px;margin:0}.qe-close,.qe-tab,.qe-item,.qe-action{border:0;border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer}.qe-close{font-size:24px;background:transparent;color:inherit}.qe-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.qe-tab{background:#e8eee9;color:#174b2c}.qe-tab.active{background:#168443;color:white}.qe-content{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px}.qe-item{background:rgba(22,132,67,.10);color:inherit;text-align:right;border:1px solid rgba(22,132,67,.2)}.qe-item small{display:block;opacity:.7;margin-top:4px}.qe-note{line-height:1.7;opacity:.8}.qe-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qe-action{background:#168443;color:white}.qe-verse{width:100%;min-height:70px;border-radius:10px;padding:10px;border:1px solid #aaa;background:transparent;color:inherit;font:inherit}.qe-accordion{display:flex;flex-direction:column;gap:10px;margin-top:12px}.qe-journey-row{width:100%}.qe-journey-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:right;border:1px solid rgba(200,220,235,.18);border-radius:14px;padding:15px 16px;background:rgba(55,72,88,.42);color:inherit;font:inherit;cursor:pointer}.qe-journey-arrow{font-size:22px;transition:transform .2s ease;color:#69cf91;flex:0 0 auto}.qe-journey-toggle.expanded .qe-journey-arrow{transform:rotate(180deg)}.qe-journey-panel{padding:12px 4px 4px}.qe-journey-panel[hidden]{display:none}.qe-journey-panel h3{margin:4px 0 8px}.qe-journey-panel .qe-content{grid-template-columns:1fr;gap:8px}
 /* الواجهة الزجاجية الجديدة: اجعل الخريطة تتبعها حتى في الوضع النهاري */
 body.interface-new #quranExplorerOverlay .qe-box{background:rgba(28,42,56,.96);color:#f4f7f9;border:1px solid rgba(200,220,235,.22);box-shadow:0 16px 48px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.06)}
 body.interface-new #quranExplorerOverlay .qe-head h2{color:#fff}
 body.interface-new #quranExplorerOverlay .qe-tab{background:rgba(55,72,88,.72);color:#f4f7f9;border:1px solid rgba(200,220,235,.16)}
 body.interface-new #quranExplorerOverlay .qe-tab.active{background:#50c878;color:#0a2018;border-color:#50c878}
 body.interface-new #quranExplorerOverlay .qe-item{background:rgba(55,72,88,.58);color:#f4f7f9;border:1px solid rgba(200,220,235,.16)}
-body.interface-new #quranExplorerOverlay .qe-item:active{background:rgba(70,92,110,.78)}
+body.interface-new #quranExplorerOverlay .qe-item:active{background:rgba(70,92,110,.78)}body.interface-new #quranExplorerOverlay .qe-journey-toggle{background:rgba(55,72,88,.40);color:#f4f7f9;border:1px solid rgba(200,220,235,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}body.interface-new #quranExplorerOverlay .qe-journey-toggle.expanded{background:rgba(65,91,108,.58);border-color:rgba(105,207,145,.5)}body.night-mode #quranExplorerOverlay .qe-journey-toggle{background:#303a32;color:#f1f1f1;border-color:#49634f}
 body.interface-new #quranExplorerOverlay .qe-note{color:rgba(230,238,244,.82)}
 body.interface-new #quranExplorerOverlay .qe-verse{border-color:rgba(200,220,235,.3);color:#f4f7f9}
 /* مطابقة دقيقة لزجاج القائمة الجانبية في الواجهة الجديدة */
@@ -78,8 +78,23 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       host.innerHTML='<p class="qe-note">اختر قصة، ثم اختر الحدث الذي تريد الوصول إليه. سينتقل المصحف إلى صفحة الآية المحددة.</p><div class="qe-content" id="qeStories"></div><div id="qeStoryDetail"></div>';
       storyDetails.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s.title;$('qeStories').appendChild(b);b.addEventListener('click',()=>renderStoryDetail(s));});
     }else if(tab==='journey'){
-      host.innerHTML='<p class="qe-note">اختر رحلة موضوعية، ثم تنقّل بين محطاتها القرآنية. عند اختيار محطة ينتقل المصحف ومشغل التلاوة إلى الآية المحددة.</p><div class="qe-content" id="qeJourneys"></div><div id="qeJourneyDetail"></div>';
-      journeyDetails.forEach(j=>{const b=document.createElement('button');b.className='qe-item';b.textContent=j.title;$('qeJourneys').appendChild(b);b.addEventListener('click',()=>renderJourney(j));});
+      host.innerHTML='<p class="qe-note">اختر رحلة لعرض محطاتها القرآنية، ثم اضغط على المحطة للانتقال إلى موضعها.</p><div class="qe-accordion" id="qeJourneys"></div>';
+      journeyDetails.forEach((j,index)=>{
+        const row=document.createElement('div');row.className='qe-journey-row';
+        const b=document.createElement('button');b.type='button';b.className='qe-journey-toggle';
+        const title=document.createElement('span');title.textContent=j.title;
+        const arrow=document.createElement('span');arrow.className='qe-journey-arrow';arrow.textContent='▾';arrow.setAttribute('aria-hidden','true');
+        b.append(title,arrow);
+        const panel=document.createElement('div');panel.className='qe-journey-panel';panel.hidden=true;
+        b.setAttribute('aria-expanded','false');
+        b.addEventListener('click',()=>{
+          const opening=panel.hidden;
+          host.querySelectorAll('.qe-journey-panel').forEach(p=>p.hidden=true);
+          host.querySelectorAll('.qe-journey-toggle').forEach(t=>{t.setAttribute('aria-expanded','false');t.classList.remove('expanded');});
+          if(opening){panel.hidden=false;b.setAttribute('aria-expanded','true');b.classList.add('expanded');renderJourney(j,panel);}
+        });
+        row.append(b,panel);$('qeJourneys').appendChild(row);
+      });
     }else if(tab==='widget'){
       const saved=JSON.parse(localStorage.getItem('ayaWidgetVerse')||'null');
       const details=saved&&saved.surah?('السورة: '+(saved.surahName||saved.surah)+' • الآية: '+saved.ayah+' • الصفحة: '+saved.page):'سيتم تحديث الويدجت تلقائيًا عند انتقال التظليل إلى آية جديدة.';
@@ -218,8 +233,8 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       ['رحمة الله وسعت كل شيء',7,156],['الأمر بالعفو والصفح',7,199],['العفو والإصلاح عند المقدرة',42,40],['كظم الغيظ والعفو عن الناس',3,134],['دفع السيئة بالحسنة',41,34],['الصفح الجميل',15,85],['عدم اليأس من رحمة الله',39,53]
     ]}
   ];
-  function renderJourney(journey){
-    const detail=$('qeJourneyDetail')||$('qeContent');
+  function renderJourney(journey,target){
+    const detail=target||$('qeJourneyDetail')||$('qeContent');
     detail.innerHTML='<h3>'+journey.title+'</h3><p class="qe-note">هذه محطات مختارة للتدبر في الموضوع، وليست حصرًا لكل الآيات المتعلقة به. اضغط على المحطة لفتح موضعها في المصحف ومزامنة مشغل التلاوة.</p><div class="qe-content" id="qeJourneyItems"></div>';
     journey.events.forEach(ev=>{
       const b=document.createElement('button');b.className='qe-item';
