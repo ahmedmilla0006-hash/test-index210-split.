@@ -2064,6 +2064,15 @@ function estimateWordWindow(pts, progress){
 function drawAyahHighlight(item){
   clearAyahHighlight();
   const displayColor=getAyahDisplayColor();
+  try{
+    const widgetSurah=Number(item && (item._surah || timingSurahLoaded));
+    const widgetAyah=Number(item && item.ayah);
+    const widgetPage=Number(pageFromTiming(item,widgetSurah) || currentPage);
+    if(widgetSurah>0&&widgetAyah>0){
+      window.dispatchEvent(new CustomEvent('aya:active-ayah',{detail:{surah:widgetSurah,ayah:widgetAyah,page:widgetPage}}));
+    }
+  }catch(e){}
+
 
   if(highlightMode === "none") return;
   if(!item || !item.polygon || !page.complete) return;
