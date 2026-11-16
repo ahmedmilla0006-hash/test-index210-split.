@@ -199,8 +199,22 @@
       if(!r.ok)throw Error('تعذر تحديد المدينة تلقائيًا');const g=await r.json();
       if(!g.success||!Number.isFinite(Number(g.latitude))||!Number.isFinite(Number(g.longitude)))throw Error('لم يتمكن الاتصال من تحديد المدينة');
       const zone=g.timezone?.id||'Europe/Istanbul';
+      // نترجم اسم المدينة والدولة للعرض فقط؛ تبقى إحداثيات IP الأصلية
+      // هي المستخدمة للمواقيت والقبلة حتى لا تتغير دقة الموقع التلقائي.
+      let displayCity=g.city||g.region||'',displayCountry=g.country||'';
+      try{
+        const q=encodeURIComponent(g.city||g.region||'');
+        if(q){
+          const gr=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+q+'&count=10&language=ar&format=json');
+          if(gr.ok){
+            const gj=await gr.json(),list=gj.results||[];
+            const match=list.find(x=>String(x.country_code||'').toUpperCase()===String(g.country_code||'').toUpperCase())||list[0];
+            if(match){displayCity=match.name||displayCity;displayCountry=match.country||displayCountry;}
+          }
+        }
+      }catch(_){}
       const data=await getTimings(g.latitude,g.longitude,zone);
-      state={...state,mode:'auto',city:g.city||g.region||'',country:g.country||'',latitude:Number(g.latitude),longitude:Number(g.longitude),timezone:zone,...data,updated:Date.now()};
+      state={...state,mode:'auto',city:displayCity,country:displayCountry,latitude:Number(g.latitude),longitude:Number(g.longitude),timezone:zone,...data,updated:Date.now()};
       save();render();
     }catch(e){$('ayaPrayerStatus').textContent=(e.message||'تعذر التحديث')+' — يمكنك اختيار المدينة يدويًا.';render()}
   }
