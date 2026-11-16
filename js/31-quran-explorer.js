@@ -694,7 +694,7 @@ body.night-mode #quranExplorerOverlay .qe-note{color:#d0d0d0}
       const json=await response.json();
       const verse=(json&&json.data&&json.data.text)||'';
       if(!verse)return;
-      const rows=window.surahs||[];
+      const rows=(typeof surahs!=='undefined'&&Array.isArray(surahs))?surahs:[];
       const surahName=rows[surah-1]?String(rows[surah-1][0]):('سورة '+surah);
       const value={text:verse,surah,ayah,page,surahName,updated:Date.now()};
       localStorage.setItem('ayaWidgetVerse',JSON.stringify(value));
