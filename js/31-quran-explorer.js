@@ -102,7 +102,8 @@
       const match=Array.isArray(items)?items.find(x=>Number(x.ayah)===Number(ayah)):null;
       const targetPage=match&&typeof pageFromTiming==='function'?Number(pageFromTiming(match,surah)):0;
       if(!targetPage){alert('تعذر تحديد صفحة الآية حاليًا. تحقق من الاتصال ثم حاول مجددًا.');return;}
-      loadPage(targetPage,{keepAudio:true});
+      /* مرّر السورة والآية إلى مشغل الصوت أيضًا؛ keepAudio كان يمنع تحديث مصدر/موضع الصوت. */
+      loadPage(targetPage,{surahNumber:Number(surah),startAyah:Number(ayah)});
       close();
       if(match){
         let tries=0;
