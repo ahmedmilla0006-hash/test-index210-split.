@@ -30,8 +30,8 @@
       juzStarts.forEach((p,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent='الجزء '+juzNames[i];b.addEventListener('click',()=>goPage(p));$('qeJuz').appendChild(b);});
       getSurahRows().forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.innerHTML=`${i+1}. ${s[0]}<small>صفحة ${s[1]}</small>`;b.addEventListener('click',()=>goPage(s[1]));$('qeSurahs').appendChild(b);});
     }else if(tab==='stories'){
-      host.innerHTML='<p class="qe-note">اختر قصة لعرض السور التي وردت فيها. مواضع السور هنا دليل تنقّل عام وليست حصرًا لكل الآيات.</p><div class="qe-content" id="qeStories"></div>';
-      stories.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>goPage(pageForSurah(s[1][0])));$('qeStories').appendChild(b);});
+      host.innerHTML='<p class="qe-note">اختر قصة، ثم اختر الحدث الذي تريد الوصول إليه. سينتقل المصحف إلى صفحة الآية المحددة.</p><div class="qe-content" id="qeStories"></div><div id="qeStoryDetail"></div>';
+      storyDetails.forEach((s,i)=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s.title;$('qeStories').appendChild(b);b.addEventListener('click',()=>renderStoryDetail(s));});
     }else if(tab==='journey'){
       host.innerHTML='<p class="qe-note">اختر قصة، ثم تنقّل بين السور التي وردت فيها.</p><div class="qe-content" id="qeJourneys"></div><div id="qeJourneyDetail"></div>';
       stories.forEach(s=>{const b=document.createElement('button');b.className='qe-item';b.textContent=s[0];b.addEventListener('click',()=>renderJourney(s[0],s[1]));$('qeJourneys').appendChild(b);});
@@ -40,6 +40,56 @@
       const details=saved&&saved.surah?('السورة: '+(saved.surahName||saved.surah)+' • الآية: '+saved.ayah+' • الصفحة: '+saved.page):'سيتم تحديث الويدجت تلقائيًا عند انتقال التظليل إلى آية جديدة.';
       host.innerHTML='<p class="qe-note">يعرض الويدجت الآية التي يصل إليها التظليل تلقائيًا، مع اسم السورة ورقم الآية والصفحة. اضغط عليه للعودة إلى الموضع نفسه دون تشغيل الصوت.</p><div class="qe-verse" id="qeWidgetText" style="white-space:pre-wrap;text-align:center;line-height:1.9">'+(saved&&saved.text?saved.text.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])):'لم يتم تحديد آية بعد')+'</div><p class="qe-note" id="qeWidgetMeta">'+details+'</p><p class="qe-note" id="qeWidgetStatus">يُحدّث التطبيق الويدجت تلقائيًا أثناء التلاوة أو عند تغيير الآية المظللة.</p>';
     }
+  }
+  const storyDetails=[
+    {title:'آدم عليه السلام',events:[
+      ['خلق آدم واستخلافه في الأرض',2,30],
+      ['تعليم آدم الأسماء',2,31],
+      ['عرض الأسماء على الملائكة',2,32],
+      ['الأمر بالسجود لآدم وامتناع إبليس',2,34],
+      ['إسكان آدم وزوجه الجنة والنهي عن الشجرة',2,35],
+      ['وسوسة الشيطان والأكل من الشجرة',7,20],
+      ['ظهور السوءات والندم',7,22],
+      ['هبوط آدم وزوجه إلى الأرض',2,36],
+      ['تلقي آدم كلمات التوبة وقبول الله توبته',2,37],
+      ['دعاء آدم وزوجه بالمغفرة',7,23],
+      ['بيان عداوة إبليس لبني آدم',7,24],
+      ['وصية الله لبني آدم باتباع الهدى',2,38],
+      ['قصة ابني آدم وقربان القربان',5,27]
+    ]}
+  ];
+  function renderStoryDetail(story){
+    const host=$('qeStoryDetail');if(!host)return;
+    host.innerHTML='<h3>'+story.title+'</h3><p class="qe-note">اضغط على الحدث للانتقال إلى آيته في المصحف.</p><div class="qe-content" id="qeStoryEvents"></div>';
+    story.events.forEach(ev=>{
+      const b=document.createElement('button');b.className='qe-item';
+      b.innerHTML=ev[0]+'<small>سورة '+(getSurahRows()[ev[1]-1]?.[0]||ev[1])+' • الآية '+ev[2]+'</small>';
+      b.addEventListener('click',()=>goToStoryAyah(ev[1],ev[2]));
+      $('qeStoryEvents').appendChild(b);
+    });
+  }
+  async function goToStoryAyah(surah,ayah){
+    try{
+      if(typeof fetchTimingForSurah!=='function'||typeof loadPage!=='function')return;
+      const items=await fetchTimingForSurah(surah);
+      const match=Array.isArray(items)?items.find(x=>Number(x.ayah)===Number(ayah)):null;
+      const targetPage=match&&typeof pageFromTiming==='function'?Number(pageFromTiming(match,surah)):0;
+      if(!targetPage){alert('تعذر تحديد صفحة الآية حاليًا. تحقق من الاتصال ثم حاول مجددًا.');return;}
+      loadPage(targetPage,{keepAudio:true});
+      close();
+      if(match){
+        let tries=0;
+        const timer=setInterval(()=>{
+          tries++;
+          try{
+            if(typeof currentPage!=='undefined'&&Number(currentPage)===targetPage&&page&&page.complete){
+              clearInterval(timer);drawAyahHighlight(match);return;
+            }
+          }catch(e){}
+          if(tries>=40)clearInterval(timer);
+        },150);
+      }
+    }catch(e){alert('تعذر الوصول إلى موضع الآية. حاول مرة أخرى.');}
   }
   function renderJourney(title,nums){const detail=$('qeJourneyDetail')||$('qeContent');detail.innerHTML=`<h3>${title}</h3><p class="qe-note">اضغط على اسم السورة للانتقال إلى بدايتها في المصحف.</p><div class="qe-content" id="qeJourneyItems"></div>`;nums.forEach(n=>{const rows=getSurahRows();const name=rows[n-1]?rows[n-1][0]:'سورة '+n;const b=document.createElement('button');b.className='qe-item';b.textContent=name;b.addEventListener('click',()=>goPage(pageForSurah(n)));$('qeJourneyItems').appendChild(b);});}
   document.addEventListener('DOMContentLoaded',ensureUI);if(document.readyState!=='loading')ensureUI();
