@@ -27,6 +27,12 @@ run("configure-media-notifications.py")
 run("add-quran-widget.py")
 run("add-adhan-notifications.py")
 run("apply-adhan-build-patches.py")
+
+# Keep the packaged prayer-times module in sync with the patched web source.
+web_prayer = Path("android-app/www/js/32-aya-prayer-times.js")
+packaged_js = Path("android-app/android/app/src/main/assets/public/js")
+if web_prayer.is_file() and packaged_js.is_dir():
+    (packaged_js / web_prayer.name).write_bytes(web_prayer.read_bytes())
 run("fix-main-activity-task-removal.py")
 run("configure-android-network-bridge.py")
 run("fix-media-notification-dismiss.py")
@@ -39,6 +45,8 @@ manifest = root / "AndroidManifest.xml"
 checks = {
     java / "MainActivity.java": ["AyaPrivateAudioStoreJs", "AYA_NATIVE_NETWORK_BRIDGE_V1", "markMediaNotifDismissed"],
     java / "AyaMediaService.java": ["public class AyaMediaService"],
+    java / "AyaAdhanBridge.java": ["scheduleAt"],
+    java / "AyaAdhanReceiver.java": ["goAsync", "PARTIAL_WAKE_LOCK"],
     manifest: ['android:name=".AyaMediaService"', "android.permission.ACCESS_NETWORK_STATE"],
 }
 for path, tokens in checks.items():
