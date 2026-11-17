@@ -581,6 +581,8 @@ jobs:
           echo "==== Installing native Adhan notification components ===="
           test -f app-source/scripts/add-adhan-notifications.py
           python3 app-source/scripts/add-adhan-notifications.py
+          test -f app-source/scripts/add-adhan-audio.py
+          python3 app-source/scripts/add-adhan-audio.py
           JAVA_DIR="android-app/android/app/src/main/java/com/aya/alquran"
           MAIN="$JAVA_DIR/MainActivity.java"
           MANIFEST="android-app/android/app/src/main/AndroidManifest.xml"
