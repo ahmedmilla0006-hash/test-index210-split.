@@ -10,27 +10,51 @@ shutil.copy2(src,raw/"adhan_default.mp3")
 
 receiver=root/"java/com/aya/alquran/AyaAdhanReceiver.java"
 s=receiver.read_text(encoding="utf-8")
-s=s.replace('static final String CHANNEL = "aya_adhan_alerts";','static final String CHANNEL = "aya_adhan_alerts_v11";')
-s=s.replace('new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH)','new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH)')
-s=s.replace('import android.os.Build;','import android.os.Build;\nimport android.net.Uri;')
-# The generated receiver may use either an inline channel constructor or a
-# named channel variable (the workflow's restored Java template uses the latter).
-old='nm.createNotificationChannel(new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH));'
-sound='''Uri sound = Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.adhan_default);
-            channel.setSound(sound, new android.media.AudioAttributes.Builder()
-                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());'''
-if old in s:
-    new='''NotificationChannel channel = new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
-            '''+sound+'''
-            nm.createNotificationChannel(channel);'''
-    s=s.replace(old,new,1)
-elif "NotificationChannel channel = new NotificationChannel(" in s and "nm.createNotificationChannel(channel);" in s:
-    anchor="            nm.createNotificationChannel(channel);"
-    if "channel.setSound(sound" not in s:
-        s=s.replace(anchor,"            "+sound+"\n"+anchor,1)
-else:
-    raise SystemExit("Unsupported generated notification channel structure; no source changes applied")
+# The workflow restores a receiver template that creates its channel in
+# ensureChannel(Context), not inline inside onReceive().
+s=re.sub(r'static final String CHANNEL = "[^"]+";', 'static final String CHANNEL = "aya_adhan_alerts_v11";', s, count=1)
+if "import android.net.Uri;" not in s:
+    s=s.replace("import android.os.Build;", "import android.os.Build;\\nimport android.net.Uri;")
+# Replace the complete ensureChannel method body using brace matching so this
+# works regardless of formatting in the generated Java template.
+pos=s.find("ensureChannel(")
+if pos < 0:
+    raise SystemExit("Generated receiver has no ensureChannel method")
+brace=s.find("{",pos)
+if brace < 0:
+    raise SystemExit("ensureChannel method body not found")
+depth=0
+end=None
+for i in range(brace,len(s)):
+    if s[i]=="{": depth+=1
+    elif s[i]=="}":
+        depth-=1
+        if depth==0:
+            end=i
+            break
+if end is None:
+    raise SystemExit("Unclosed ensureChannel method")
+sig=s[pos:brace]
+param=re.search(r'Context\\s+(\\w+)',sig)
+if not param:
+    raise SystemExit("Cannot identify Context parameter in ensureChannel")
+ctx=param.group(1)
+body="""{
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationManager nm = (NotificationManager) """+ctx+""".getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                NotificationChannel channel = new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
+                Uri sound = Uri.parse("android.resource://" + """+ctx+""".getPackageName() + "/" + R.raw.adhan_default);
+                channel.setSound(sound, new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+                nm.createNotificationChannel(channel);
+            }
+        }
+    }"""
+s=s[:brace]+body+s[end+1:]
+receiver.write_text(s,encoding="utf-8")
+
 receiver.write_text(s,encoding="utf-8")
 
 bridge=root/"java/com/aya/alquran/AyaAdhanBridge.java"
