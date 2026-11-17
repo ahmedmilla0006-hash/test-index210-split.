@@ -22,6 +22,7 @@ def run(name):
 # The media script installs the app-owned MainActivity and AyaMediaService.
 # Subsequent scripts extend that baseline with widget, adhan, connectivity and
 # notification-dismissal integrations.
+run("install-aya-android-icons.py")
 run("configure-media-notifications.py")
 run("add-quran-widget.py")
 run("add-adhan-notifications.py")
