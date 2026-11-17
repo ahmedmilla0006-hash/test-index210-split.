@@ -42,8 +42,8 @@ if 'android:name=".AyaMediaService"' not in manifest:
     manifest = manifest.replace("</application>", service + "\\n</application>", 1)
 elif 'android:stopWithTask="true"' not in manifest:
     manifest = re.sub(
-        r'(<service\\b[^>]*android:name="\\.AyaMediaService"[^>]*)(/?>)',
-        r'\\1\\n        android:stopWithTask="true"\\2',
+        r'(<service\b[^>]*android:name="\.AyaMediaService"[^>]*)(/?>)',
+        r'\1\n        android:stopWithTask="true"\2',
         manifest,
         count=1
     )
