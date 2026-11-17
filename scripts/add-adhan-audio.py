@@ -90,8 +90,15 @@ if "openSoundSettings" not in b:
         } catch (Exception ignored) {}
     }
 '''
-    if marker not in b: raise SystemExit("Bridge anchor missing")
-    b=b.replace(marker,method+marker,1)
+    if marker in b:
+        b=b.replace(marker,method+marker,1)
+    else:
+        # The workflow may restore an older generated bridge without this method.
+        # Insert before the final class brace instead of depending on a method anchor.
+        idx=b.rfind("}")
+        if idx < 0:
+            raise SystemExit("AyaAdhanBridge class closing brace not found")
+        b=b[:idx]+method+b[idx:]
     bridge.write_text(b,encoding="utf-8")
 
 js=Path("app-source/js/32-aya-prayer-times.js")
