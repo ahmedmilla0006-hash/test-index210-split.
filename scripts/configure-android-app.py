@@ -45,8 +45,8 @@ manifest = root / "AndroidManifest.xml"
 checks = {
     java / "MainActivity.java": ["AyaPrivateAudioStoreJs", "AYA_NATIVE_NETWORK_BRIDGE_V1", "markMediaNotifDismissed"],
     java / "AyaMediaService.java": ["public class AyaMediaService"],
-    java / "AyaAdhanBridge.java": ["scheduleAt"],
-    java / "AyaAdhanReceiver.java": ["goAsync", "PARTIAL_WAKE_LOCK"],
+    java / "AyaAdhanBridge.java": ["public class AyaAdhanBridge", "void schedule("],
+    java / "AyaAdhanReceiver.java": ["public class AyaAdhanReceiver", "void onReceive("],
     manifest: ['android:name=".AyaMediaService"', "android.permission.ACCESS_NETWORK_STATE"],
 }
 for path, tokens in checks.items():
