@@ -28,11 +28,32 @@ for permission in (
 if "android:usesCleartextTraffic" not in manifest:
     manifest = manifest.replace("<application",
         '<application android:usesCleartextTraffic="true"', 1)
-if 'android:name=".AyaMediaService"' in manifest and 'android:stopWithTask="true"' not in manifest:
-    manifest = re.sub(r'(<service\\s+android:name="\\.AyaMediaService"[^>]*)(/?>)',
-        r'\\1\\n        android:stopWithTask="true"\\2', manifest, count=1)
+# Register the media foreground service in the manifest. The earlier workflow
+# generated the Java service but did not reliably preserve this declaration.
+if 'android:name=".AyaMediaService"' not in manifest:
+    service = '''
+    <service
+        android:name=".AyaMediaService"
+        android:enabled="true"
+        android:exported="false"
+        android:foregroundServiceType="mediaPlayback"
+        android:stopWithTask="true" />
+'''
+    manifest = manifest.replace("</application>", service + "\\n</application>", 1)
+elif 'android:stopWithTask="true"' not in manifest:
+    manifest = re.sub(
+        r'(<service\\b[^>]*android:name="\\.AyaMediaService"[^>]*)(/?>)',
+        r'\\1\\n        android:stopWithTask="true"\\2',
+        manifest,
+        count=1
+    )
 MANIFEST.write_text(manifest, encoding="utf-8")
 
 (JAVA / "MainActivity.java").write_bytes(base64.b64decode(ACTIVITY_B64))
 (JAVA / "AyaMediaService.java").write_bytes(base64.b64decode(SERVICE_B64))
-print("Media notification MainActivity and AyaMediaService installed.")
+
+# Verify registration after writing both Java and manifest files.
+final_manifest = MANIFEST.read_text(encoding="utf-8")
+if 'android:name=".AyaMediaService"' not in final_manifest:
+    raise SystemExit("ERROR: AyaMediaService was not registered in AndroidManifest.xml")
+print("Media notification MainActivity, AyaMediaService and manifest registration installed.")
