@@ -68,4 +68,9 @@ if 'ayaAdhanSoundSettings' not in t[t.find(marker)-500:t.find(marker)]:
     if marker not in t: raise SystemExit("JS sync anchor missing")
     t=t.replace(marker,handler+marker,1)
 js.write_text(t,encoding="utf-8")
+# Capacitor sync already ran; refresh web and native copies with the patched settings UI.
+web_js=Path("android-app/www/js/32-aya-prayer-times.js")
+if web_js.parent.is_dir(): web_js.write_text(t,encoding="utf-8")
+native_js=Path("android-app/android/app/src/main/assets/public/js/32-aya-prayer-times.js")
+if native_js.parent.is_dir(): native_js.write_text(t,encoding="utf-8")
 print("Installed offline bundled default adhan sound and Android channel sound settings.")
