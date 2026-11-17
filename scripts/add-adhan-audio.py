@@ -13,17 +13,24 @@ s=receiver.read_text(encoding="utf-8")
 s=s.replace('static final String CHANNEL = "aya_adhan_alerts";','static final String CHANNEL = "aya_adhan_alerts_v11";')
 s=s.replace('new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH)','new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH)')
 s=s.replace('import android.os.Build;','import android.os.Build;\nimport android.net.Uri;')
+# The generated receiver may use either an inline channel constructor or a
+# named channel variable (the workflow's restored Java template uses the latter).
 old='nm.createNotificationChannel(new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH));'
-new='''NotificationChannel channel = new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
-            Uri sound = Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.adhaan_default);
+sound='''Uri sound = Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.adhan_default);
             channel.setSound(sound, new android.media.AudioAttributes.Builder()
                 .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());'''
+if old in s:
+    new='''NotificationChannel channel = new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
+            '''+sound+'''
             nm.createNotificationChannel(channel);'''
-# Correct resource identifier is adhan_default.
-new=new.replace("adhaan_default","adhan_default")
-if old not in s: raise SystemExit("Notification channel anchor missing")
-s=s.replace(old,new)
+    s=s.replace(old,new,1)
+elif "NotificationChannel channel = new NotificationChannel(" in s and "nm.createNotificationChannel(channel);" in s:
+    anchor="            nm.createNotificationChannel(channel);"
+    if "channel.setSound(sound" not in s:
+        s=s.replace(anchor,"            "+sound+"\n"+anchor,1)
+else:
+    raise SystemExit("Unsupported generated notification channel structure; no source changes applied")
 receiver.write_text(s,encoding="utf-8")
 
 bridge=root/"java/com/aya/alquran/AyaAdhanBridge.java"
