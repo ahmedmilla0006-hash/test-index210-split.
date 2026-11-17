@@ -1,0 +1,491 @@
+name: Build Aya Android — Google Play (separate)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout this repository first so the original signing secrets remain available.
+      - name: Checkout signing repository
+        uses: actions/checkout@v4
+
+      # The app's web files come from the experimental repository.
+      - name: Checkout experimental app source
+        uses: actions/checkout@v4
+        with:
+          repository: ahmedmilla0006-hash/test-index210-split.
+          ref: main
+          path: app-source
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Create Android project
+        run: |
+          mkdir -p android-app
+          cd android-app
+          npm init -y
+          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+
+      - name: Prepare web files
+        run: |
+          mkdir -p android-app/www
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='android-app' \
+            app-source/ android-app/www/
+
+      - name: Initialize Capacitor
+        working-directory: android-app
+        run: npx cap init "آية" "com.aya.alquran" --web-dir www
+
+      - name: Add Android platform
+        working-directory: android-app
+        run: npx cap add android
+
+      - name: Set separate experimental application ID
+        run: |
+          python3 << 'PY'
+          from pathlib import Path
+          import re
+
+          gradle = Path("android-app/android/app/build.gradle")
+          if not gradle.exists():
+              gradle = Path("android-app/android/app/build.gradle.kts")
+          if not gradle.exists():
+              raise SystemExit("ERROR: Android app Gradle file not found")
+
+          text = gradle.read_text(encoding="utf-8")
+          pattern = r"(applicationId\s+)(['\"])(com\.aya\.alquran)(['\"])"
+          updated, count = re.subn(pattern, r"\1\2com.aya.alquran.test\4", text, count=1)
+          if count != 1:
+              raise SystemExit("ERROR: Could not safely set applicationId to com.aya.alquran.test")
+          gradle.write_text(updated, encoding="utf-8")
+          if "applicationId 'com.aya.alquran.test'" not in updated and 'applicationId "com.aya.alquran.test"' not in updated and 'applicationId("com.aya.alquran.test")' not in updated:
+              raise SystemExit("ERROR: Experimental application ID verification failed")
+          print("Experimental application ID configured: com.aya.alquran.test")
+          PY
+
+      - name: Install Pillow
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pillow
+
+      - name: Sync Capacitor
+        working-directory: android-app
+        run: npx cap sync android
+
+      - name: Set automatic Google Play version
+        id: ver
+        run: |
+          CODE="$((203 + GITHUB_RUN_NUMBER))"
+          NAME="1.0.${CODE}"
+          echo "versionCode=$CODE" >> "$GITHUB_OUTPUT"
+          echo "versionName=$NAME" >> "$GITHUB_OUTPUT"
+
+      # ============================================================
+      # KEYSTORE
+      # ============================================================
+
+      - name: Decode and verify keystore
+        env:
+          K1: ${{ secrets.KS1 }}
+          K2: ${{ secrets.KS2 }}
+          K3: ${{ secrets.KS3 }}
+          K4: ${{ secrets.KS4 }}
+          K5: ${{ secrets.KS5 }}
+          K6: ${{ secrets.KS6 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          python3 << 'PY'
+          import os, re, base64, pathlib, subprocess, sys
+
+          parts = []
+          for i in range(1, 7):
+              v = os.environ.get(f"K{i}") or ""
+              print(f"KS{i} length = {len(v)}")
+              if not v:
+                  print(f"::error::السر KS{i} ناقص")
+                  sys.exit(1)
+              parts.append(v)
+
+          b64 = "".join(parts)
+          # إزالة أي محارف غير Base64 (مسافات، أسطر، إلخ)
+          b64 = re.sub(r"[^A-Za-z0-9+/=]", "", b64)
+          # إكمال الحشو إن نقص
+          pad = (-len(b64)) % 4
+          if pad:
+              b64 += "=" * pad
+
+          print(f"Total base64 length = {len(b64)}")
+
+          try:
+              raw = base64.b64decode(b64, validate=False)
+          except Exception as e:
+              print(f"::error::فشل فك Base64: {e}")
+              sys.exit(1)
+
+          out = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "aya-release.jks"
+          out.write_bytes(raw)
+          print(f"Keystore bytes = {len(raw)}")
+          if len(raw) < 100:
+              print("::error::ملف keystore صغير جداً — الأجزاء ناقصة")
+              sys.exit(1)
+
+          pw = os.environ.get("KEYSTORE_PASSWORD") or ""
+          alias = os.environ.get("KEY_ALIAS") or ""
+          r = subprocess.run(
+              ["keytool", "-list", "-keystore", str(out), "-storepass", pw, "-alias", alias],
+              capture_output=True,
+              text=True,
+          )
+          print(r.stdout)
+          if r.returncode != 0:
+              print(r.stderr)
+              print("::error::keytool فشل — تحقق من KEYSTORE_PASSWORD و KEY_ALIAS")
+              sys.exit(1)
+          print("Keystore verified successfully.")
+          PY
+
+      # ============================================================
+      # VERSION
+      # ============================================================
+
+      - name: Set version in Gradle
+        env:
+          VERSION_CODE: ${{ steps.ver.outputs.versionCode }}
+          VERSION_NAME: ${{ steps.ver.outputs.versionName }}
+        run: |
+          python3 << 'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          vc = os.environ["VERSION_CODE"]
+          vn = os.environ["VERSION_NAME"]
+
+          gradle = Path(
+              "android-app/android/app/build.gradle"
+          )
+
+          if not gradle.exists():
+              gradle = Path(
+                  "android-app/android/app/build.gradle.kts"
+              )
+
+          if not gradle.exists():
+              raise SystemExit(
+                  "ERROR: Gradle file not found."
+              )
+
+          text = gradle.read_text(
+              encoding="utf-8"
+          )
+
+          text = re.sub(
+              r"versionCode\s+\d+",
+              "versionCode " + vc,
+              text
+          )
+
+          text = re.sub(
+              r'versionName\s+"[^"]*"',
+              'versionName "' + vn + '"',
+              text
+          )
+
+          gradle.write_text(
+              text,
+              encoding="utf-8"
+          )
+
+          print(
+              "version set",
+              vc,
+              vn
+          )
+          PY
+
+      # ============================================================
+      # NOTIFICATIONS — إشعار التلاوة (قائمة التشغيل)
+      # ============================================================
+
+      - name: Apply Android app integrations from experimental source
+        run: |
+          set -e
+          python3 app-source/scripts/configure-android-app.py
+
+      - name: Verify Android media service and private audio storage
+        run: |
+          set -e
+          python3 <<'PY_CLEANUP'
+          from pathlib import Path
+          import re
+          root = Path("android-app/android/app/src/main")
+          java_dir = root / "java/com/aya/alquran"
+          for name in ("UpdateCheckWorker.java", "UpdateInstallActivity.java", "UpdateDownloadReceiver.java"):
+              p = java_dir / name
+              if p.exists(): p.unlink()
+          manifest = root / "AndroidManifest.xml"
+          mt = manifest.read_text(encoding="utf-8")
+          mt = re.sub(r'\s*<uses-permission\b(?=[^>]*android:name="android\.permission\.REQUEST_INSTALL_PACKAGES")[^>]*/>\s*', "\n", mt)
+          for component in ("UpdateInstallActivity", "UpdateDownloadReceiver"):
+              pattern = r'\s*<(?:activity|receiver)\b(?=[^>]*android:name="\.' + component + r'")[^>]*(?:/>|>.*?</(?:activity|receiver)>)\s*'
+              mt = re.sub(pattern, "\n", mt, flags=re.DOTALL)
+          mt = re.sub(r'\s*<provider\b(?=[^>]*android:name="androidx\.core\.content\.FileProvider")[^>]*>.*?</provider>\s*', "\n", mt, flags=re.DOTALL)
+          manifest.write_text(mt, encoding="utf-8")
+          file_paths = root / "res/xml/file_paths.xml"
+          if file_paths.exists() and "fileprovider" not in mt.lower(): file_paths.unlink()
+          PY_CLEANUP
+          test -f android-app/android/app/src/main/java/com/aya/alquran/MainActivity.java
+          test -f android-app/android/app/src/main/java/com/aya/alquran/AyaMediaService.java
+          grep -q "public class AyaMediaService" android-app/android/app/src/main/java/com/aya/alquran/AyaMediaService.java
+          grep -q "AyaPrivateAudioStoreJs" android-app/android/app/src/main/java/com/aya/alquran/MainActivity.java
+          grep -q 'android:name=".AyaMediaService"' android-app/android/app/src/main/AndroidManifest.xml
+          if grep -Rqs --include='AndroidManifest.xml' 'android.permission.REQUEST_INSTALL_PACKAGES' android-app/android/app/src/main; then
+            echo "::error::APK installation permission remains"
+            exit 1
+          fi
+          echo "Media service and private audio storage verified."
+
+      # ============================================================
+      # إزالة إذن الميكروفون من المانيفست فقط (بدون حظر صارم للكود)
+      # ============================================================
+
+      - name: Remove RECORD_AUDIO from manifest if present
+        run: |
+          set -e
+          python3 << 'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("android-app/android/app/src/main")
+          removed = 0
+          for manifest in root.rglob("AndroidManifest.xml"):
+              text = manifest.read_text(encoding="utf-8")
+              new_text = re.sub(
+                  r'\s*<uses-permission\s+android:name=["\']android\.permission\.RECORD_AUDIO["\']\s*/?>',
+                  "",
+                  text,
+              )
+              if new_text != text:
+                  manifest.write_text(new_text, encoding="utf-8")
+                  removed += 1
+                  print("Removed RECORD_AUDIO from", manifest)
+          if removed == 0:
+              print("No RECORD_AUDIO permission in manifests (nothing to remove).")
+          else:
+              print("Stripped RECORD_AUDIO from", removed, "manifest file(s).")
+          # لا نفشل البناء بسبب WebChromeClient أو كود عام — التطبيق لا يطلب الميكروفون
+          print("Microphone permission will not appear; no hard code ban applied.")
+          PY
+
+      # ============================================================
+      # BUILD APK
+      # ============================================================
+
+      - name: Ensure Manage Space in manifest (before APK build)
+        run: |
+          python3 -c "import base64; exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmltcG9ydCByZQoKamF2YV9kaXIgPSBQYXRoKCJhbmRyb2lkLWFwcC9hbmRyb2lkL2FwcC9zcmMvbWFpbi9qYXZhL2NvbS9heWEvYWxxdXJhbiIpCmphdmFfZGlyLm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKbWFuaWZlc3QgPSBQYXRoKCJhbmRyb2lkLWFwcC9hbmRyb2lkL2FwcC9zcmMvbWFpbi9BbmRyb2lkTWFuaWZlc3QueG1sIikKbWFpbiA9IGphdmFfZGlyIC8gIk1haW5BY3Rpdml0eS5qYXZhIgpyZXMgPSBQYXRoKCJhbmRyb2lkLWFwcC9hbmRyb2lkL2FwcC9zcmMvbWFpbi9yZXMiKQoKcmVwbGFjZWQgPSAwCmZvciB4bWwgaW4gcmVzLnJnbG9iKCIqLnhtbCIpOgogICAgcCA9IHN0cih4bWwpCiAgICBpZiBhbnkoeCBpbiBwIGZvciB4IGluICgiL2xheW91dC8iLCAiL21pcG1hcCIsICIvZHJhd2FibGUiKSk6CiAgICAgICAgY29udGludWUKICAgIHRyeToKICAgICAgICB0ID0geG1sLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICBjb250aW51ZQogICAgaWYgIndpbmRvd0JhY2tncm91bmQiIG5vdCBpbiB0IGFuZCAiU3BsYXNoU2NyZWVuIiBub3QgaW4gdCBhbmQgInNwbGFzaCIgbm90IGluIHQubG93ZXIoKToKICAgICAgICBjb250aW51ZQogICAgb3JpZyA9IHQKICAgIHQgPSByZS5zdWIocicoPGl0ZW1ccytuYW1lPSJhbmRyb2lkOndpbmRvd0JhY2tncm91bmQiPilbXjxdKyg8L2l0ZW0+KScsIHInXDEjZjVmMGU3XDInLCB0KQogICAgdCA9IHJlLnN1YihyJyg8aXRlbVxzK25hbWU9IndpbmRvd0JhY2tncm91bmQiPilbXjxdKyg8L2l0ZW0+KScsIHInXDEjZjVmMGU3XDInLCB0KQogICAgdCA9IHJlLnN1YihyJyg8aXRlbVxzK25hbWU9ImFuZHJvaWQ6d2luZG93U3BsYXNoU2NyZWVuQmFja2dyb3VuZCI+KVtePF0rKDwvaXRlbT4pJywgcidcMSNmNWYwZTdcMicsIHQpCiAgICB0ID0gcmUuc3ViKHInKDxpdGVtXHMrbmFtZT0id2luZG93U3BsYXNoU2NyZWVuQmFja2dyb3VuZCI+KVtePF0rKDwvaXRlbT4pJywgcidcMSNmNWYwZTdcMicsIHQpCiAgICB0ID0gcmUuc3ViKHInKDxpdGVtXHMrbmFtZT0id2luZG93U3BsYXNoU2NyZWVuQW5pbWF0ZWRJY29uIj4pW148XSsoPC9pdGVtPiknLCByJ1wxQGFuZHJvaWQ6Y29sb3IvdHJhbnNwYXJlbnRcMicsIHQpCiAgICB0ID0gcmUuc3ViKHInKDxpdGVtXHMrbmFtZT0iYW5kcm9pZDp3aW5kb3dTcGxhc2hTY3JlZW5BbmltYXRlZEljb24iPilbXjxdKyg8L2l0ZW0+KScsIHInXDFAYW5kcm9pZDpjb2xvci90cmFuc3BhcmVudFwyJywgdCkKICAgIGlmIHQgIT0gb3JpZzoKICAgICAgICB4bWwud3JpdGVfdGV4dCh0LCBlbmNvZGluZz0idXRmLTgiKQogICAgICAgIHJlcGxhY2VkICs9IDEKICAgICAgICBwcmludCgicGF0Y2hlZCIsIHhtbCkKcHJpbnQoInRoZW1lcyBwYXRjaGVkOiIsIHJlcGxhY2VkKQoKdmFsdWVzID0gcmVzIC8gInZhbHVlcyIKdmFsdWVzLm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKZm9yIG9sZCBpbiBsaXN0KHZhbHVlcy5nbG9iKCJheWFfd2luZG93Ki54bWwiKSkgKyBsaXN0KHZhbHVlcy5nbG9iKCJheWFfc29saWQqLnhtbCIpKToKICAgIHRyeToKICAgICAgICBvbGQudW5saW5rKCkKICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgcGFzcwoKKHZhbHVlcyAvICJheWFfc29saWRfd2luZG93LnhtbCIpLndyaXRlX3RleHQoCiAgICAiPD94bWwgdmVyc2lvbj1cIjEuMFwiIGVuY29kaW5nPVwidXRmLThcIj8+XG4iCiAgICAiPHJlc291cmNlcz5cbiIKICAgICIgICAgPHN0eWxlIG5hbWU9XCJBeWEuU29saWRXaW5kb3dcIiBwYXJlbnQ9XCJAYW5kcm9pZDpzdHlsZS9UaGVtZS5EZXZpY2VEZWZhdWx0Lk5vQWN0aW9uQmFyXCI+XG4iCiAgICAiICAgICAgICA8aXRlbSBuYW1lPVwiYW5kcm9pZDp3aW5kb3dCYWNrZ3JvdW5kXCI+I2Y1ZjBlNzwvaXRlbT5cbiIKICAgICIgICAgICAgIDxpdGVtIG5hbWU9XCJhbmRyb2lkOndpbmRvd05vVGl0bGVcIj50cnVlPC9pdGVtPlxuIgogICAgIiAgICAgICAgPGl0ZW0gbmFtZT1cImFuZHJvaWQ6d2luZG93QWN0aW9uQmFyXCI+ZmFsc2U8L2l0ZW0+XG4iCiAgICAiICAgICAgICA8aXRlbSBuYW1lPVwiYW5kcm9pZDpzdGF0dXNCYXJDb2xvclwiPiNmNWYwZTc8L2l0ZW0+XG4iCiAgICAiICAgICAgICA8aXRlbSBuYW1lPVwiYW5kcm9pZDpuYXZpZ2F0aW9uQmFyQ29sb3JcIj4jZjVmMGU3PC9pdGVtPlxuIgogICAgIiAgICA8L3N0eWxlPlxuIgogICAgIjwvcmVzb3VyY2VzPlxuIiwKICAgIGVuY29kaW5nPSJ1dGYtOCIsCikKcHJpbnQoImF5YV9zb2xpZF93aW5kb3cueG1sIHdyaXR0ZW4iKQoKbWFuYWdlX3NyYyA9IHInJydwYWNrYWdlIGNvbS5heWEuYWxxdXJhbjsKCmltcG9ydCBhbmRyb2lkLmFwcC5BY3Rpdml0eTsKaW1wb3J0IGFuZHJvaWQuY29udGVudC5JbnRlbnQ7CmltcG9ydCBhbmRyb2lkLmNvbnRlbnQuU2hhcmVkUHJlZmVyZW5jZXM7CmltcG9ydCBhbmRyb2lkLmdyYXBoaWNzLkNvbG9yOwppbXBvcnQgYW5kcm9pZC5ncmFwaGljcy5kcmF3YWJsZS5Db2xvckRyYXdhYmxlOwppbXBvcnQgYW5kcm9pZC5vcy5CdWlsZDsKaW1wb3J0IGFuZHJvaWQub3MuQnVuZGxlOwppbXBvcnQgYW5kcm9pZC52aWV3LldpbmRvdzsKCnB1YmxpYyBjbGFzcyBNYW5hZ2VTcGFjZUFjdGl2aXR5IGV4dGVuZHMgQWN0aXZpdHkgewogICAgQE92ZXJyaWRlCiAgICBwcm90ZWN0ZWQgdm9pZCBvbkNyZWF0ZShCdW5kbGUgc2F2ZWRJbnN0YW5jZVN0YXRlKSB7CiAgICAgICAgc3VwZXIub25DcmVhdGUoc2F2ZWRJbnN0YW5jZVN0YXRlKTsKICAgICAgICB0cnkgewogICAgICAgICAgICByZXF1ZXN0V2luZG93RmVhdHVyZShXaW5kb3cuRkVBVFVSRV9OT19USVRMRSk7CiAgICAgICAgICAgIGdldFdpbmRvdygpLnNldEJhY2tncm91bmREcmF3YWJsZShuZXcgQ29sb3JEcmF3YWJsZShDb2xvci5wYXJzZUNvbG9yKCIjZjVmMGU3IikpKTsKICAgICAgICAgICAgaWYgKEJ1aWxkLlZFUlNJT04uU0RLX0lOVCA+PSAyMSkgewogICAgICAgICAgICAgICAgZ2V0V2luZG93KCkuc2V0U3RhdHVzQmFyQ29sb3IoQ29sb3IucGFyc2VDb2xvcigiI2Y1ZjBlNyIpKTsKICAgICAgICAgICAgfQogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIFNoYXJlZFByZWZlcmVuY2VzIHNwID0gZ2V0U2hhcmVkUHJlZmVyZW5jZXMoImF5YV9wcmVmcyIsIE1PREVfUFJJVkFURSk7CiAgICAgICAgICAgIHNwLmVkaXQoKS5wdXRCb29sZWFuKCJvcGVuX3N0b3JhZ2UiLCB0cnVlKS5hcHBseSgpOwogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIEludGVudCBpID0gbmV3IEludGVudCh0aGlzLCBNYWluQWN0aXZpdHkuY2xhc3MpOwogICAgICAgICAgICBpLmFkZEZsYWdzKEludGVudC5GTEFHX0FDVElWSVRZX1NJTkdMRV9UT1AKICAgICAgICAgICAgICAgICAgICB8IEludGVudC5GTEFHX0FDVElWSVRZX1JFT1JERVJfVE9fRlJPTlQKICAgICAgICAgICAgICAgICAgICB8IEludGVudC5GTEFHX0FDVElWSVRZX05FV19UQVNLKTsKICAgICAgICAgICAgaS5wdXRFeHRyYSgiYXlhX29wZW5fc3RvcmFnZSIsIHRydWUpOwogICAgICAgICAgICBzdGFydEFjdGl2aXR5KGkpOwogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIGZpbmlzaCgpOwogICAgICAgIHRyeSB7IG92ZXJyaWRlUGVuZGluZ1RyYW5zaXRpb24oMCwgMCk7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgfQp9CicnJwooamF2YV9kaXIgLyAiTWFuYWdlU3BhY2VBY3Rpdml0eS5qYXZhIikud3JpdGVfdGV4dChtYW5hZ2Vfc3JjLCBlbmNvZGluZz0idXRmLTgiKQpwcmludCgiTWFuYWdlU3BhY2VBY3Rpdml0eS5qYXZhIHdyaXR0ZW4uIikKCmlmIG5vdCBtYW5pZmVzdC5leGlzdHMoKToKICAgIHJhaXNlIFN5c3RlbUV4aXQoIkFuZHJvaWRNYW5pZmVzdC54bWwgbm90IGZvdW5kIikKbXQgPSBtYW5pZmVzdC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKCmlmIHJlLnNlYXJjaChyJ2FuZHJvaWQ6bWFuYWdlU3BhY2VBY3Rpdml0eVxzKj1ccyoiW14iXSoiJywgbXQpOgogICAgbXQgPSByZS5zdWIocidhbmRyb2lkOm1hbmFnZVNwYWNlQWN0aXZpdHlccyo9XHMqIlteIl0qIicsCiAgICAgICAgICAgICAgICAnYW5kcm9pZDptYW5hZ2VTcGFjZUFjdGl2aXR5PSJjb20uYXlhLmFscXVyYW4uTWFuYWdlU3BhY2VBY3Rpdml0eSInLCBtdCwgY291bnQ9MSkKZWxzZToKICAgIGRlZiBhZGRfYXR0cihtKToKICAgICAgICByZXR1cm4gbS5ncm91cCgxKSArICcgYW5kcm9pZDptYW5hZ2VTcGFjZUFjdGl2aXR5PSJjb20uYXlhLmFscXVyYW4uTWFuYWdlU3BhY2VBY3Rpdml0eSInICsgbS5ncm91cCgyKQogICAgbXQyLCBuID0gcmUuc3VibihyJyg8YXBwbGljYXRpb25cYltePl0qPykoLz8+KScsIGFkZF9hdHRyLCBtdCwgY291bnQ9MSwgZmxhZ3M9cmUuRE9UQUxMKQogICAgaWYgbm90IG46CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgiRVJST1I6IG5vIGFwcGxpY2F0aW9uIHRhZyIpCiAgICBtdCA9IG10MgoKaWYgJ2FuZHJvaWQ6bmFtZT0iLk1hbmFnZVNwYWNlQWN0aXZpdHkiJyBub3QgaW4gbXQ6CiAgICBhY3QgPSAoCiAgICAgICAgJyAgICAgICAgPGFjdGl2aXR5XG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6bmFtZT0iLk1hbmFnZVNwYWNlQWN0aXZpdHkiXG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6bGFiZWw9Itil2K/Yp9ix2Kkg2KfZhNmF2LPYp9it2KkiXG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6ZXhwb3J0ZWQ9InRydWUiXG4nCiAgICAgICAgJyAgICAgICAgICAgIGFuZHJvaWQ6ZXhjbHVkZUZyb21SZWNlbnRzPSJ0cnVlIlxuJwogICAgICAgICcgICAgICAgICAgICBhbmRyb2lkOnRoZW1lPSJAc3R5bGUvQXlhLlNvbGlkV2luZG93IiAvPlxuJwogICAgKQogICAgbXQgPSBtdC5yZXBsYWNlKCI8L2FwcGxpY2F0aW9uPiIsIGFjdCArICIgICAgPC9hcHBsaWNhdGlvbj4iLCAxKQplbHNlOgogICAgbXQgPSByZS5zdWIoCiAgICAgICAgcicoYW5kcm9pZDpuYW1lPSJcLk1hbmFnZVNwYWNlQWN0aXZpdHkiW14+XSopYW5kcm9pZDp0aGVtZT0iW14iXSoiJywKICAgICAgICByJ1wxYW5kcm9pZDp0aGVtZT0iQHN0eWxlL0F5YS5Tb2xpZFdpbmRvdyInLAogICAgICAgIG10LCBjb3VudD0xLAogICAgKQoKaWR4ID0gbXQuZmluZCgnYW5kcm9pZDpuYW1lPSIuTWFpbkFjdGl2aXR5IicpCmlmIGlkeCA+PSAwOgogICAgd2luZG93ID0gbXRbaWR4OmlkeCs2MDBdCiAgICBpZiAnYW5kcm9pZDp0aGVtZT0nIGluIHdpbmRvdzoKICAgICAgICB3aW5kb3cyID0gcmUuc3ViKHInYW5kcm9pZDp0aGVtZT0iW14iXSoiJywgJ2FuZHJvaWQ6dGhlbWU9IkBzdHlsZS9BeWEuU29saWRXaW5kb3ciJywgd2luZG93LCBjb3VudD0xKQogICAgICAgIG10ID0gbXRbOmlkeF0gKyB3aW5kb3cyICsgbXRbaWR4KzYwMDpdCiAgICAgICAgcHJpbnQoIk1haW5BY3Rpdml0eSB0aGVtZSByZXBsYWNlZCIpCiAgICBlbHNlOgogICAgICAgIG10ID0gbXRbOmlkeF0gKyAnYW5kcm9pZDpuYW1lPSIuTWFpbkFjdGl2aXR5IlxuICAgICAgICAgICAgYW5kcm9pZDp0aGVtZT0iQHN0eWxlL0F5YS5Tb2xpZFdpbmRvdyInICsgbXRbaWR4K2xlbignYW5kcm9pZDpuYW1lPSIuTWFpbkFjdGl2aXR5IicpOl0KICAgICAgICBwcmludCgiTWFpbkFjdGl2aXR5IHRoZW1lIGluc2VydGVkIikKCm1hbmlmZXN0LndyaXRlX3RleHQobXQsIGVuY29kaW5nPSJ1dGYtOCIpCnByaW50KCJtYW5pZmVzdCBPSyIpCgpNQVJLRVIgPSAiQVlBX1NUT1JBR0VfTUFOQUdFUl9WOCIKaWYgbWFpbi5leGlzdHMoKToKICAgIGF0ID0gbWFpbi5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKICAgIGlmIE1BUktFUiBpbiBhdDoKICAgICAgICBwcmludCgiTWFpbkFjdGl2aXR5IHN0b3JhZ2UgaG9vayBwcmVzZW50IikKICAgIGVsc2U6CiAgICAgICAgaGVscGVyID0gIiIiCiAgICAvLyAiIiIgKyBNQVJLRVIgKyAiIiIKICAgIHByaXZhdGUgdm9pZCBvcGVuU3RvcmFnZU1hbmFnZXJGcm9tSW50ZW50KEludGVudCBpbnRlbnQpIHsKICAgICAgICBib29sZWFuIG9wZW4gPSBmYWxzZTsKICAgICAgICB0cnkgeyBpZiAoaW50ZW50ICE9IG51bGwgJiYgaW50ZW50LmdldEJvb2xlYW5FeHRyYSgiYXlhX29wZW5fc3RvcmFnZSIsIGZhbHNlKSkgb3BlbiA9IHRydWU7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIGFuZHJvaWQuY29udGVudC5TaGFyZWRQcmVmZXJlbmNlcyBzcCA9IGdldFNoYXJlZFByZWZlcmVuY2VzKCJheWFfcHJlZnMiLCBNT0RFX1BSSVZBVEUpOwogICAgICAgICAgICBpZiAoc3AuZ2V0Qm9vbGVhbigib3Blbl9zdG9yYWdlIiwgZmFsc2UpKSBvcGVuID0gdHJ1ZTsKICAgICAgICAgICAgc3AuZWRpdCgpLnB1dEJvb2xlYW4oIm9wZW5fc3RvcmFnZSIsIGZhbHNlKS5hcHBseSgpOwogICAgICAgIH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIGlmICghb3BlbikgcmV0dXJuOwogICAgICAgIHRyeSB7IGlmIChpbnRlbnQgIT0gbnVsbCkgaW50ZW50LnJlbW92ZUV4dHJhKCJheWFfb3Blbl9zdG9yYWdlIik7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7CiAgICAgICAgICAgIGdldFdpbmRvdygpLnNldEJhY2tncm91bmREcmF3YWJsZShuZXcgYW5kcm9pZC5ncmFwaGljcy5kcmF3YWJsZS5Db2xvckRyYXdhYmxlKGFuZHJvaWQuZ3JhcGhpY3MuQ29sb3IucGFyc2VDb2xvcigiI2Y1ZjBlNyIpKSk7CiAgICAgICAgICAgIGlmIChhbmRyb2lkLm9zLkJ1aWxkLlZFUlNJT04uU0RLX0lOVCA+PSAyMSkgewogICAgICAgICAgICAgICAgZ2V0V2luZG93KCkuc2V0U3RhdHVzQmFyQ29sb3IoYW5kcm9pZC5ncmFwaGljcy5Db2xvci5wYXJzZUNvbG9yKCIjZjVmMGU3IikpOwogICAgICAgICAgICB9CiAgICAgICAgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9CiAgICAgICAgZmluYWwgYW5kcm9pZC53ZWJraXQuV2ViVmlld1tdIGhvbGRlciA9IG5ldyBhbmRyb2lkLndlYmtpdC5XZWJWaWV3WzFdOwogICAgICAgIGZpbmFsIFN0cmluZyBqcyA9ICJ0cnl7bG9jYWxTdG9yYWdlLnNldEl0ZW0oJ2F5YV9vcGVuX3N0b3JhZ2UnLCcxJyk7c2Vzc2lvblN0b3JhZ2Uuc2V0SXRlbSgnYXlhX29wZW5fc3RvcmFnZScsJzEnKTtpZih3aW5kb3cuX19heWFSZXF1ZXN0U3RvcmFnZU1hbmFnZXIpd2luZG93Ll9fYXlhUmVxdWVzdFN0b3JhZ2VNYW5hZ2VyKCk7ZWxzZSBpZih3aW5kb3cuX19heWFPcGVuU3RvcmFnZU1hbmFnZXIpd2luZG93Ll9fYXlhT3BlblN0b3JhZ2VNYW5hZ2VyKCk7fWNhdGNoKGUpe30iOwogICAgICAgIFJ1bm5hYmxlIHRyeU9wZW4gPSBuZXcgUnVubmFibGUoKSB7CiAgICAgICAgICAgIGludCB0cmllcyA9IDA7CiAgICAgICAgICAgIEBPdmVycmlkZSBwdWJsaWMgdm9pZCBydW4oKSB7CiAgICAgICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgICAgIGlmIChob2xkZXJbMF0gPT0gbnVsbCkgeyB0cnkgeyBob2xkZXJbMF0gPSBnZXRCcmlkZ2UoKS5nZXRXZWJWaWV3KCk7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fSB9CiAgICAgICAgICAgICAgICAgICAgZmluYWwgYW5kcm9pZC53ZWJraXQuV2ViVmlldyB3diA9IGhvbGRlclswXTsKICAgICAgICAgICAgICAgICAgICBpZiAod3YgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgICB3di5wb3N0KG5ldyBSdW5uYWJsZSgpIHsgQE92ZXJyaWRlIHB1YmxpYyB2b2lkIHJ1bigpIHsgdHJ5IHsgd3YuZXZhbHVhdGVKYXZhc2NyaXB0KGpzLCBudWxsKTsgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9IH0gfSk7CiAgICAgICAgICAgICAgICAgICAgICAgIGlmICh0cmllcyA+PSA4KSByZXR1cm47CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgfSBjYXRjaCAoRXhjZXB0aW9uIGlnbm9yZWQpIHt9CiAgICAgICAgICAgICAgICBpZiAodHJpZXMrKyA8IDUwKSB7IHRyeSB7IGdldFdpbmRvdygpLmdldERlY29yVmlldygpLnBvc3REZWxheWVkKHRoaXMsIDMwMCk7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fSB9CiAgICAgICAgICAgIH0KICAgICAgICB9OwogICAgICAgIHRyeSB7IGdldFdpbmRvdygpLmdldERlY29yVmlldygpLnBvc3REZWxheWVkKHRyeU9wZW4sIDMwMCk7IH0gY2F0Y2ggKEV4Y2VwdGlvbiBpZ25vcmVkKSB7fQogICAgICAgIHRyeSB7IGdldFdpbmRvdygpLmdldERlY29yVmlldygpLnBvc3REZWxheWVkKHRyeU9wZW4sIDEyMDApOyB9IGNhdGNoIChFeGNlcHRpb24gaWdub3JlZCkge30KICAgIH0KIiIiCiAgICAgICAgcG9zID0gYXQucmZpbmQoIn0iKQogICAgICAgIGNhbmRpZGF0ZSA9IGF0Wzpwb3NdICsgaGVscGVyICsgIlxufVxuIgogICAgICAgICMgTG9jYXRlIG9uQ3JlYXRlIHJlZ2FyZGxlc3Mgb2YgcHVibGljL3Byb3RlY3RlZC9wcml2YXRlIGZvcm1hdHRpbmcuCiAgICAgICAgbSA9IHJlLnNlYXJjaChyIlxidm9pZFxzK29uQ3JlYXRlXHMqXChbXildKlwpXHMqXHsiLCBjYW5kaWRhdGUpCiAgICAgICAgaWYgbm90IG06CiAgICAgICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoIkVSUk9SOiBNYWluQWN0aXZpdHkgb25DcmVhdGUgbWV0aG9kIG5vdCBmb3VuZDsgcmVmdXNpbmcgdG8gd3JpdGUgTWFpbkFjdGl2aXR5IikKICAgICAgICBib2R5X3N0YXJ0ID0gbS5lbmQoKQogICAgICAgIHN1cGVyX2NhbGwgPSByZS5zZWFyY2gociJcYnN1cGVyXHMqXC5ccypvbkNyZWF0ZVxzKlwoXHMqc2F2ZWRJbnN0YW5jZVN0YXRlXHMqXClccyo7IiwgY2FuZGlkYXRlW2JvZHlfc3RhcnQ6XSkKICAgICAgICBpZiBub3Qgc3VwZXJfY2FsbDoKICAgICAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgiRVJST1I6IHN1cGVyLm9uQ3JlYXRlKHNhdmVkSW5zdGFuY2VTdGF0ZSkgbm90IGZvdW5kIGluc2lkZSBNYWluQWN0aXZpdHkub25DcmVhdGU7IHJlZnVzaW5nIHRvIHdyaXRlIE1haW5BY3Rpdml0eSIpCiAgICAgICAgaW5zZXJ0X2F0ID0gYm9keV9zdGFydCArIHN1cGVyX2NhbGwuZW5kKCkKICAgICAgICBjYW5kaWRhdGUgPSBjYW5kaWRhdGVbOmluc2VydF9hdF0gKyAiXG4gICAgICAgIG9wZW5TdG9yYWdlTWFuYWdlckZyb21JbnRlbnQoZ2V0SW50ZW50KCkpOyAvLyAiICsgTUFSS0VSICsgY2FuZGlkYXRlW2luc2VydF9hdDpdCiAgICAgICAgaWYgY2FuZGlkYXRlLmNvdW50KCJ7IikgIT0gY2FuZGlkYXRlLmNvdW50KCJ9Iik6CiAgICAgICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoIkVSUk9SOiBNYWluQWN0aXZpdHkgYnJhY2VzIGFyZSB1bmJhbGFuY2VkOyByZWZ1c2luZyB0byB3cml0ZSBNYWluQWN0aXZpdHkiKQogICAgICAgIG1haW4ud3JpdGVfdGV4dChjYW5kaWRhdGUsIGVuY29kaW5nPSJ1dGYtOCIpCiAgICAgICAgcHJpbnQoIk1haW5BY3Rpdml0eSBwYXRjaGVkIFY4IGFuZCBzYXZlZCIpCgoK').decode('utf-8'))"
+          echo "---- Manifest manageSpace check ----"
+          grep -n "manageSpaceActivity\|ManageSpaceActivity" android-app/android/app/src/main/AndroidManifest.xml || (echo "MISSING manageSpace" && exit 1)
+
+      - name: Inject app version into all web assets
+        env:
+          VERSION_NAME: ${{ steps.ver.outputs.versionName }}
+        run: |
+          set -e
+          python3 <<'PY_VERSION'
+          from pathlib import Path
+          import os
+
+          version = os.environ["VERSION_NAME"]
+          display_version = version + " – تجريبي"
+          roots = [
+              Path("android-app/www"),
+              Path("android-app/android/app/src/main/assets/public"),
+          ]
+          text_suffixes = {".html", ".js", ".css", ".json", ".webmanifest", ".txt", ".xml"}
+          changed = []
+          unresolved = []
+
+          for root in roots:
+              if not root.exists():
+                  raise SystemExit(f"ERROR: web assets directory not found: {root}")
+              for path in root.rglob("*"):
+                  if not path.is_file() or path.suffix.lower() not in text_suffixes:
+                      continue
+                  try:
+                      content = path.read_text(encoding="utf-8")
+                  except UnicodeDecodeError:
+                      continue
+                  if "__AYA_BUILD_VERSION__" in content:
+                      path.write_text(content.replace("__AYA_BUILD_VERSION__", display_version), encoding="utf-8")
+                      changed.append(str(path))
+
+          # Verify every packaged web asset, not only index.html.
+          packaged = roots[1]
+          for path in packaged.rglob("*"):
+              if not path.is_file() or path.suffix.lower() not in text_suffixes:
+                  continue
+              try:
+                  content = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              if "__AYA_BUILD_VERSION__" in content:
+                  unresolved.append(str(path))
+
+          if unresolved:
+              raise SystemExit("ERROR: unresolved version placeholder in: " + ", ".join(unresolved))
+
+          index = packaged / "index.html"
+          if not index.exists() or display_version not in index.read_text(encoding="utf-8"):
+              raise SystemExit("ERROR: experimental display version not found in packaged index.html")
+
+          print(f"Injected display version {display_version}; changed files: {changed}")
+          print("Verified no raw version placeholder remains in packaged web assets.")
+          PY_VERSION
+          if grep -q "update.json\|download-apk\|updatesOverlay" android-app/android/app/src/main/assets/public/index.html; then
+            echo "::error::In-app updater residue remains in packaged web assets"
+            exit 1
+          fi
+          echo "Verified: packaged assets have no in-app updater."
+
+      - name: Set experimental Android display name after sync
+        run: |
+          python3 <<'PY_APP_NAME'
+          from pathlib import Path
+          import re
+
+          res = Path("android-app/android/app/src/main/res")
+          manifest = Path("android-app/android/app/src/main/AndroidManifest.xml")
+          if not manifest.exists():
+              raise SystemExit("ERROR: AndroidManifest.xml not found")
+
+          # Update app_name in every localized strings resource so a device
+          # language cannot silently restore the original app name.
+          found = 0
+          for strings in res.glob("values*/strings.xml"):
+              content = strings.read_text(encoding="utf-8")
+              updated, count = re.subn(
+                  r'(<string\s+name=["\'](?:app_name|title_activity_main)["\']\s*>).*?(</string>)',
+                  r'\1آية تجريبي\2',
+                  content,
+                  flags=re.DOTALL,
+              )
+              if count:
+                  strings.write_text(updated, encoding="utf-8")
+                  found += count
+
+          # Set the launcher label explicitly on the application element.
+          xml = manifest.read_text(encoding="utf-8")
+          updated, count = re.subn(
+              r'(<application\b[^>]*\bandroid:label=)["\'][^"\']*["\']',
+              r'\1"آية تجريبي"',
+              xml,
+              count=1,
+          )
+          if count == 0:
+              updated, count = re.subn(
+                  r'<application\b',
+                  '<application android:label="آية تجريبي"',
+                  xml,
+                  count=1,
+              )
+          if count != 1:
+              raise SystemExit("ERROR: Could not set Android application label")
+          manifest.write_text(updated, encoding="utf-8")
+
+          final_xml = manifest.read_text(encoding="utf-8")
+          if 'android:label="آية تجريبي"' not in final_xml:
+              raise SystemExit("ERROR: Launcher label verification failed")
+          print(f"Verified launcher label: آية تجريبي; localized string entries updated: {found}")
+          PY_APP_NAME
+
+      - name: Build signed release APK
+        working-directory: android-app/android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -e
+
+          chmod +x gradlew
+
+          STORE="${{ github.workspace }}/aya-release.jks"
+
+          if [ ! -f "$STORE" ]; then
+            echo "::error::Keystore file not found."
+            exit 1
+          fi
+
+          # بناء APK (تثبيت مباشر) + AAB (Google Play) معاً
+          ./gradlew assembleRelease bundleRelease --stacktrace \
+            -Pandroid.injected.signing.store.file="$STORE" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "::error::Release APK was not produced."
+            exit 1
+          fi
+
+          AAB=$(find app/build/outputs/bundle/release -maxdepth 1 -type f -name "*.aab" | head -n 1)
+          if [ -z "$AAB" ]; then
+            echo "::error::Release AAB was not produced."
+            exit 1
+          fi
+
+          # Give the downloadable APK a clear, user-friendly filename.
+          APK_DIR=$(dirname "$APK")
+          APK_NAMED="$APK_DIR/Aya-Test-${{ steps.ver.outputs.versionName }}.apk"
+          cp "$APK" "$APK_NAMED"
+          echo "APK: $APK_NAMED"
+          echo "AAB: $AAB"
+
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -o -name aapt2 | head -n 1)
+          if [ -z "$AAPT" ]; then
+            echo "::error::aapt/aapt2 not found; cannot verify final APK permissions."
+            exit 1
+          fi
+
+          if "$AAPT" dump permissions "$APK" | grep -q "android.permission.RECORD_AUDIO"; then
+            echo "::warning::APK still lists RECORD_AUDIO (may come from a dependency). App does not request mic at runtime."
+          else
+            echo "Final APK permission check: RECORD_AUDIO is not declared."
+          fi
+          echo "Both APK and AAB built successfully."
+
+      # ============================================================
+      # UPLOAD APK + AAB
+      # ============================================================
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aya-play-store-apk-${{ steps.ver.outputs.versionName }}
+          path: android-app/android/app/build/outputs/apk/release/Aya-Test-*.apk
+          if-no-files-found: error
+
+      - name: Upload AAB (Google Play)
+        uses: actions/upload-artifact@v4
+        with:
+          name: aya-play-store-aab-${{ steps.ver.outputs.versionName }}
+          path: android-app/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
