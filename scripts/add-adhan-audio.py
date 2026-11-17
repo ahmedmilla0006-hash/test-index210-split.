@@ -10,26 +10,47 @@ shutil.copy2(src,raw/"adhan_default.mp3")
 
 receiver=root/"java/com/aya/alquran/AyaAdhanReceiver.java"
 s=receiver.read_text(encoding="utf-8")
-s=re.sub(r'static final String CHANNEL = "[^"]+";', 'static final String CHANNEL = "aya_adhan_alerts_v11";', s, count=1)
+s=s.replace('static final String CHANNEL = "aya_adhan_alerts";',
+            'static final String CHANNEL = "aya_adhan_alerts_v11";', 1)
 
-# Patch the generated receiver independently of its channel-construction formatting.
 if "import android.net.Uri;" not in s:
-    s=s.replace("import android.os.Build;", "import android.os.Build;\\nimport android.net.Uri;", 1)
+    s=s.replace("import android.os.Build;", "import android.os.Build;\nimport android.net.Uri;", 1)
+
 if "createAyaAdhanChannel" not in s:
-    method=re.search(r'onReceive\\s*\\(\\s*Context\\s+(\\w+)', s)
-    if not method:
-        raise SystemExit("AyaAdhanReceiver.onReceive(Context ...) was not found")
-    context_name=method.group(1)
-    # Replace only the generated NotificationChannel constructor expression.
-    s,n=re.subn(
-        r'new\\s+NotificationChannel\\s*\\([^;]*?\\)',
-        'createAyaAdhanChannel(' + context_name + ')',
-        s,
-        count=1,
-        flags=re.S
-    )
-    if n != 1:
-        raise SystemExit("No NotificationChannel constructor found in generated receiver")
+    # Locate onReceive and obtain its Context variable without regex.
+    p=s.find("onReceive(")
+    if p < 0:
+        raise SystemExit("AyaAdhanReceiver.onReceive was not found")
+    q=s.find("Context ", p)
+    if q < 0:
+        raise SystemExit("Context parameter in onReceive was not found")
+    q += len("Context ")
+    e=q
+    while e < len(s) and (s[e].isalnum() or s[e] == "_"):
+        e += 1
+    context_name=s[q:e]
+    if not context_name:
+        raise SystemExit("Context parameter name is empty")
+
+    # Find the NotificationChannel constructor and its balanced closing parenthesis.
+    p=s.find("new NotificationChannel(")
+    if p < 0:
+        raise SystemExit("NotificationChannel constructor was not found")
+    op=s.find("(",p)
+    depth=0
+    e=None
+    for i in range(op,len(s)):
+        if s[i]=="(":
+            depth+=1
+        elif s[i]==")":
+            depth-=1
+            if depth==0:
+                e=i+1
+                break
+    if e is None:
+        raise SystemExit("NotificationChannel constructor is malformed")
+    s=s[:p]+"createAyaAdhanChannel("+context_name+")"+s[e:]
+
     helper="""
     private static NotificationChannel createAyaAdhanChannel(Context context) {
         NotificationChannel channel = new NotificationChannel(
@@ -44,7 +65,8 @@ if "createAyaAdhanChannel" not in s:
     }
 """
     idx=s.rfind("}")
-    if idx<0: raise SystemExit("Receiver class closing brace not found")
+    if idx < 0:
+        raise SystemExit("Receiver class closing brace not found")
     s=s[:idx]+helper+s[idx:]
 receiver.write_text(s,encoding="utf-8")
 
