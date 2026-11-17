@@ -12,20 +12,40 @@ receiver=root/"java/com/aya/alquran/AyaAdhanReceiver.java"
 s=receiver.read_text(encoding="utf-8")
 s=re.sub(r'static final String CHANNEL = "[^"]+";', 'static final String CHANNEL = "aya_adhan_alerts_v11";', s, count=1)
 
-# The notification generator creates the channel inline inside onReceive().
-# Replace that exact generated statement with a channel whose sound is bundled.
-old='nm.createNotificationChannel(new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH));'
-new='''NotificationChannel channel = new NotificationChannel(CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
-            Uri sound = Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.adhan_default);
-            channel.setSound(sound, new android.media.AudioAttributes.Builder()
-                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-            nm.createNotificationChannel(channel);'''
-if old not in s:
-    raise SystemExit("Generated inline notification channel statement not found")
-s=s.replace(old,new,1)
+# Patch the generated receiver independently of its channel-construction formatting.
 if "import android.net.Uri;" not in s:
-    s=s.replace("import android.os.Build;", "import android.os.Build;\nimport android.net.Uri;",1)
+    s=s.replace("import android.os.Build;", "import android.os.Build;\\nimport android.net.Uri;", 1)
+if "createAyaAdhanChannel" not in s:
+    method=re.search(r'onReceive\\s*\\(\\s*Context\\s+(\\w+)', s)
+    if not method:
+        raise SystemExit("AyaAdhanReceiver.onReceive(Context ...) was not found")
+    context_name=method.group(1)
+    # Replace only the generated NotificationChannel constructor expression.
+    s,n=re.subn(
+        r'new\\s+NotificationChannel\\s*\\([^;]*?\\)',
+        'createAyaAdhanChannel(' + context_name + ')',
+        s,
+        count=1,
+        flags=re.S
+    )
+    if n != 1:
+        raise SystemExit("No NotificationChannel constructor found in generated receiver")
+    helper="""
+    private static NotificationChannel createAyaAdhanChannel(Context context) {
+        NotificationChannel channel = new NotificationChannel(
+            CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
+        Uri sound = Uri.parse("android.resource://" + context.getPackageName()
+            + "/" + R.raw.adhan_default);
+        channel.setSound(sound, new android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build());
+        return channel;
+    }
+"""
+    idx=s.rfind("}")
+    if idx<0: raise SystemExit("Receiver class closing brace not found")
+    s=s[:idx]+helper+s[idx:]
 receiver.write_text(s,encoding="utf-8")
 
 bridge=root/"java/com/aya/alquran/AyaAdhanBridge.java"
