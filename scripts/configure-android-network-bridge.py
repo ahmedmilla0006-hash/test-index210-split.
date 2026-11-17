@@ -13,16 +13,16 @@ if not manifest.exists() or not activity.exists():
 mt = manifest.read_text(encoding="utf-8")
 permission = "android.permission.ACCESS_NETWORK_STATE"
 if permission not in mt:
-    application_tag = re.search(r"<application\\b", mt)
+    application_tag = re.search(r"<application\b", mt)
     if application_tag:
         insertion = application_tag.start()
-        mt = mt[:insertion] + '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\\n    ' + mt[insertion:]
+        mt = mt[:insertion] + '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    ' + mt[insertion:]
     else:
-        manifest_tag = re.search(r"<manifest\\b[^>]*>", mt, flags=re.DOTALL)
+        manifest_tag = re.search(r"<manifest\b[^>]*>", mt, flags=re.DOTALL)
         if not manifest_tag:
             raise SystemExit("ERROR: Could not locate <manifest> or <application> tag in " + str(manifest))
         insertion = manifest_tag.end()
-        mt = mt[:insertion] + '\\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' + mt[insertion:]
+        mt = mt[:insertion] + '\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' + mt[insertion:]
     manifest.write_text(mt, encoding="utf-8")
 
 final_manifest = manifest.read_text(encoding="utf-8")
