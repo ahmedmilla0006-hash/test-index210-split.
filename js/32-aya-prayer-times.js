@@ -355,28 +355,34 @@
     autoLoading=true;
     $('ayaPrayerStatus').textContent='جارٍ تحديث مواقيت الصلاة…';
     try{
-      // إعادة فحص عنوان IP دون GPS أو طلب إذن الموقع، مع منع الاستفادة من نتيجة مخزنة مؤقتًا.
-      const ipUrl='https://ipwho.is/?fields=success,city,region,country,latitude,longitude,timezone&_='+Date.now();
-      const r=await fetch(ipUrl,{cache:'no-store'});
-      if(!r.ok)throw Error('تعذر تحديد المدينة تلقائيًا');const g=await r.json();
-      if(!g.success||!Number.isFinite(Number(g.latitude))||!Number.isFinite(Number(g.longitude)))throw Error('لم يتمكن الاتصال من تحديد المدينة');
-      const zone=g.timezone?.id||'Europe/Istanbul';
-      // نترجم اسم المدينة والدولة للعرض فقط؛ تبقى إحداثيات IP الأصلية
-      // هي المستخدمة للمواقيت والقبلة حتى لا تتغير دقة الموقع التلقائي.
-      let displayCity=g.city||g.region||'',displayCountry=g.country||'';
+      // نجمع تحديد المدينة من ثلاثة مصادر مستقلة عبر IP؛ لا نستخدم GPS أو إذن الموقع.
+      const stamp=Date.now(),requests=[
+        fetch('https://ipwho.is/?fields=success,city,region,country,country_code,latitude,longitude,timezone&_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('ipwho');const x=await r.json();if(!x.success)throw Error('ipwho');return {source:'ipwho.is',city:x.city||x.region,country:x.country,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone?.id};}),
+        fetch('https://ipapi.co/json/?_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('ipapi');const x=await r.json();if(x.error)throw Error('ipapi');return {source:'ipapi.co',city:x.city||x.region,country:x.country_name,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone};}),
+        fetch('https://get.geojs.io/v1/ip/geo.json?_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('geojs');const x=await r.json();return {source:'geojs.io',city:x.city,country:x.country,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone};})
+      ];
+      const settled=await Promise.allSettled(requests);
+      const valid=settled.filter(x=>x.status==='fulfilled').map(x=>x.value).filter(x=>x.city&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon)));
+      if(!valid.length)throw Error('لم تتمكن مصادر تحديد IP من تحديد المدينة؛ يمكنك اختيارها يدويًا.');
+      const norm=v=>String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim().replace(/[^\\p{L}\\p{N}]/gu,'');
+      const groups=new Map();
+      valid.forEach(x=>{const key=norm(x.city)+'|'+(String(x.countryCode||x.country||'').toLowerCase());if(!groups.has(key))groups.set(key,[]);groups.get(key).push(x);});
+      const winning=[...groups.values()].sort((a,b)=>b.length-a.length)[0];
+      // عند اتفاق المصادر نعتمد المجموعة المتفقة؛ وعند الاختلاف نختار المصدر الأول المتاح.
+      const chosen=(winning.length>1?winning:valid).sort((a,b)=>['ipwho.is','ipapi.co','geojs.io'].indexOf(a.source)-['ipwho.is','ipapi.co','geojs.io'].indexOf(b.source))[0];
+      const zone=chosen.timezone||'Europe/Istanbul';
+      let displayCity=chosen.city||'',displayCountry=chosen.country||'';
       try{
-        const q=encodeURIComponent(g.city||g.region||'');
-        if(q){
-          const gr=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+q+'&count=10&language=ar&format=json',{cache:'no-store'});
-          if(gr.ok){
-            const gj=await gr.json(),list=gj.results||[];
-            const match=list.find(x=>String(x.country_code||'').toUpperCase()===String(g.country_code||'').toUpperCase())||list[0];
-            if(match){displayCity=match.name||displayCity;displayCountry=match.country||displayCountry;}
-          }
+        const q=encodeURIComponent(displayCity);
+        const gr=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+q+'&count=10&language=ar&format=json&_='+stamp,{cache:'no-store'});
+        if(gr.ok){
+          const gj=await gr.json(),list=gj.results||[];
+          const match=list.find(x=>String(x.country_code||'').toUpperCase()===String(chosen.countryCode||'').toUpperCase())||list.find(x=>norm(x.name)===norm(displayCity));
+          if(match){displayCity=match.name||displayCity;displayCountry=match.country||displayCountry;}
         }
       }catch(_){}
-      const data=await getTimings(g.latitude,g.longitude,zone);
-      state={...state,mode:'auto',city:displayCity,country:displayCountry,latitude:Number(g.latitude),longitude:Number(g.longitude),timezone:zone,...data,updated:Date.now()};
+      const data=await getTimings(chosen.lat,chosen.lon,zone);
+      state={...state,mode:'auto',city:displayCity,country:displayCountry,latitude:Number(chosen.lat),longitude:Number(chosen.lon),timezone:zone,locationSources:winning.length>1?winning.length:1,...data,updated:Date.now()};
       save();render();
     }catch(e){$('ayaPrayerStatus').textContent=(e.message||'تعذر التحديث')+' — يمكنك اختيار المدينة يدويًا.';render()}
     finally{autoLoading=false;}
