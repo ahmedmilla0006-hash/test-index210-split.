@@ -47,6 +47,11 @@ public class AyaAdhanReceiver extends BroadcastReceiver {
             .getString(PREF_SOUND_CHANNEL, DEFAULT_CHANNEL);
     }
 
+    static void ensureChannel(Context context) {
+        NotificationManager manager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        ensureChannel(context, manager);
+    }
+
     static void ensureChannel(Context context, NotificationManager manager) {
         if (Build.VERSION.SDK_INT < 26 || manager == null) return;
         String id = channelId(context);
