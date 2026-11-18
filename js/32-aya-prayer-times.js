@@ -355,21 +355,22 @@
     autoLoading=true;
     $('ayaPrayerStatus').textContent='جارٍ تحديث مواقيت الصلاة…';
     try{
-      // نجمع تحديد المدينة من ثلاثة مصادر مستقلة عبر IP؛ لا نستخدم GPS أو إذن الموقع.
+      // نجمع نتائج أربعة مصادر IP ونقارن الإحداثيات لا أسماء المدن فقط؛ دون GPS أو إذن الموقع.
       const stamp=Date.now(),requests=[
         fetch('https://ipwho.is/?fields=success,city,region,country,country_code,latitude,longitude,timezone&_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('ipwho');const x=await r.json();if(!x.success)throw Error('ipwho');return {source:'ipwho.is',city:x.city||x.region,country:x.country,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone?.id};}),
         fetch('https://ipapi.co/json/?_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('ipapi');const x=await r.json();if(x.error)throw Error('ipapi');return {source:'ipapi.co',city:x.city||x.region,country:x.country_name,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone};}),
-        fetch('https://get.geojs.io/v1/ip/geo.json?_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('geojs');const x=await r.json();return {source:'geojs.io',city:x.city,country:x.country,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone};})
+        fetch('https://get.geojs.io/v1/ip/geo.json?_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('geojs');const x=await r.json();return {source:'geojs.io',city:x.city,country:x.country,countryCode:x.country_code,lat:x.latitude,lon:x.longitude,timezone:x.timezone};}),
+        fetch('https://freeipapi.com/api/json?_='+stamp,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('freeipapi');const x=await r.json();return {source:'freeipapi.com',city:x.cityName,country:x.countryName,countryCode:x.countryCode,lat:x.latitude,lon:x.longitude,timezone:x.timeZone};})
       ];
       const settled=await Promise.allSettled(requests);
       const valid=settled.filter(x=>x.status==='fulfilled').map(x=>x.value).filter(x=>x.city&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon)));
       if(!valid.length)throw Error('لم تتمكن مصادر تحديد IP من تحديد المدينة؛ يمكنك اختيارها يدويًا.');
-      const norm=v=>String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim().replace(/[^\\p{L}\\p{N}]/gu,'');
-      const groups=new Map();
-      valid.forEach(x=>{const key=norm(x.city)+'|'+(String(x.countryCode||x.country||'').toLowerCase());if(!groups.has(key))groups.set(key,[]);groups.get(key).push(x);});
-      const winning=[...groups.values()].sort((a,b)=>b.length-a.length)[0];
-      // عند اتفاق المصادر نعتمد المجموعة المتفقة؛ وعند الاختلاف نختار المصدر الأول المتاح.
-      const chosen=(winning.length>1?winning:valid).sort((a,b)=>['ipwho.is','ipapi.co','geojs.io'].indexOf(a.source)-['ipwho.is','ipapi.co','geojs.io'].indexOf(b.source))[0];
+      const distanceKm=(a,b)=>{const rad=v=>v*Math.PI/180,dLat=rad(Number(a.lat)-Number(b.lat)),dLon=rad(Number(a.lon)-Number(b.lon)),p1=rad(Number(a.lat)),p2=rad(Number(b.lat));const h=Math.sin(dLat/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dLon/2)**2;return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));};
+      // نكوّن مجموعات مكانية: النتائج التي تقع ضمن 50 كم تعد متفقة مكانيًا.
+      const clusters=valid.map(seed=>valid.filter(item=>distanceKm(seed,item)<=50));
+      const winning=clusters.sort((a,b)=>b.length-a.length)[0];
+      const priority=['ipwho.is','ipapi.co','geojs.io','freeipapi.com'];
+      const chosen=[...winning].sort((a,b)=>priority.indexOf(a.source)-priority.indexOf(b.source))[0];
       const zone=chosen.timezone||'Europe/Istanbul';
       let displayCity=chosen.city||'',displayCountry=chosen.country||'';
       try{
