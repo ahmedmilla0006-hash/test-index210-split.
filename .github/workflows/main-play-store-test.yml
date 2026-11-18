@@ -521,7 +521,7 @@ jobs:
         run: |
           set -e
           echo "Running Quran widget installation script..."
-          python3 scripts/add-quran-widget.py
+          python3 app-source/scripts/add-quran-widget.py
 
           # Verify widget Java files exist
           JAVA_DIR="android-app/android/app/src/main/java/com/aya/alquran"
@@ -580,7 +580,7 @@ jobs:
           set -e
           echo "==== Installing native Adhan notification components ===="
           test -f scripts/add-adhan-notifications.py
-          python3 scripts/add-adhan-notifications.py
+          python3 app-source/scripts/add-adhan-notifications.py
           JAVA_DIR="android-app/android/app/src/main/java/com/aya/alquran"
           MAIN="$JAVA_DIR/MainActivity.java"
           MANIFEST="android-app/android/app/src/main/AndroidManifest.xml"
@@ -588,7 +588,7 @@ jobs:
           python3 /tmp/adhan_patch.py
           # Apply audio patch after notification patch restores generated Java files.
           test -f scripts/add-adhan-audio.py
-          python3 scripts/add-adhan-audio.py
+          python3 app-source/scripts/add-adhan-audio.py
           if [ -f android-app/www/js/32-aya-prayer-times.js ]; then
             mkdir -p android-app/android/app/src/main/assets/public/js
             cp -f android-app/www/js/32-aya-prayer-times.js android-app/android/app/src/main/assets/public/js/ 2>/dev/null || true
