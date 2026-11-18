@@ -23,7 +23,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
-import android.net.Uri;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -101,7 +100,6 @@ if not bridge.is_file():
 b = bridge.read_text(encoding="utf-8")
 if "saveSound(String name, String encoded)" not in b:
     imports = """import android.content.ContentValues;
-import android.media.MimeTypeMap;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
