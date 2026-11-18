@@ -234,16 +234,34 @@
       sound.innerHTML='<h4>🎵 نغمة الأذان</h4><p>اختر النغمة الافتراضية المدمجة أو ملفًا صوتيًا من جهازك، واستمع إليه قبل الحفظ.</p><div class="aya-adhan-sound-row"><button type="button" id="ayaAdhanDefaultPreview">▶ استماع للنغمة الافتراضية</button></div><div class="aya-adhan-sound-row"><input id="ayaAdhanSoundFile" type="file" accept="audio/*"><button type="button" id="ayaAdhanSoundPreview" disabled>▶ استماع</button></div><div class="aya-adhan-sound-row"><button type="button" id="ayaAdhanSoundSave" disabled>حفظ النغمة</button><button type="button" id="ayaAdhanSoundDefault">اعتماد الافتراضية</button></div><audio id="ayaAdhanSoundAudio" controls hidden></audio><div id="ayaAdhanSoundStatus" role="status">النغمة الافتراضية محددة.</div>';
       box.insertAdjacentElement('afterend',sound);
       const file=$('ayaAdhanSoundFile'),audio=$('ayaAdhanSoundAudio'),preview=$('ayaAdhanSoundPreview'),saveButton=$('ayaAdhanSoundSave'),status=$('ayaAdhanSoundStatus');
-      let pendingUrl='';\n      const defaultPreview=$('ayaAdhanDefaultPreview');\n      defaultPreview.addEventListener('click',async()=>{\n        if(!audio.paused){audio.pause();defaultPreview.textContent='▶ استماع للنغمة الافتراضية';return;}\n        if(pendingUrl){URL.revokeObjectURL(pendingUrl);pendingUrl='';}\n        file.value='';preview.disabled=true;saveButton.disabled=true;\n        audio.src='assets/adhan-default.mp3';audio.hidden=false;audio.load();\n        try{audio.currentTime=0;await audio.play();defaultPreview.textContent='■ إيقاف النغمة الافتراضية';status.textContent='يتم تشغيل النغمة الافتراضية…';}\n        catch(error){status.textContent='تعذر تشغيل النغمة الافتراضية. تحقق من اتصال الموقع.';}\n      });\n      audio.addEventListener('ended',()=>{defaultPreview.textContent='▶ استماع للنغمة الافتراضية';preview.textContent='▶ استماع';});
+      let pendingUrl='';
+      const defaultPreview=$('ayaAdhanDefaultPreview');
+      defaultPreview.addEventListener('click',async()=>{
+        if(!audio.paused){audio.pause();defaultPreview.textContent='▶ استماع للنغمة الافتراضية';return;}
+        if(pendingUrl){URL.revokeObjectURL(pendingUrl);pendingUrl='';}
+        file.value='';preview.disabled=true;saveButton.disabled=true;
+        audio.src='assets/adhan-default.mp3';audio.hidden=false;audio.load();
+        try{audio.currentTime=0;await audio.play();defaultPreview.textContent='■ إيقاف النغمة الافتراضية';status.textContent='يتم تشغيل النغمة الافتراضية…';}
+        catch(error){status.textContent='تعذر تشغيل النغمة الافتراضية. تحقق من اتصال الموقع.';}
+      });
+      audio.addEventListener('ended',()=>{defaultPreview.textContent='▶ استماع للنغمة الافتراضية';preview.textContent='▶ استماع';});
       file.addEventListener('change',()=>{
         if(pendingUrl)URL.revokeObjectURL(pendingUrl);
         const selected=file.files&&file.files[0];
         preview.disabled=!selected;saveButton.disabled=!selected;
         if(!selected){audio.pause();audio.removeAttribute('src');audio.hidden=true;return;}
-        const audioExtension=/\.(mp3|m4a|aac|wav|ogg|oga|opus|webm|mp4)$/i.test(selected.name||'');\n        if(selected.type&&!selected.type.startsWith('audio/')&&!audioExtension){file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='الرجاء اختيار ملف صوتي مدعوم مثل MP3.';return;}
+        const audioExtension=/\.(mp3|m4a|aac|wav|ogg|oga|opus|webm|mp4)$/i.test(selected.name||'');
+        if(selected.type&&!selected.type.startsWith('audio/')&&!audioExtension){file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='الرجاء اختيار ملف صوتي مدعوم مثل MP3.';return;}
         pendingUrl=URL.createObjectURL(selected);audio.src=pendingUrl;audio.hidden=false;status.textContent='تم اختيار: '+selected.name;
       });
-      preview.addEventListener('click',async()=>{\n        if(!audio.src)return;\n        if(!audio.paused){audio.pause();preview.textContent='▶ استماع';status.textContent='تم إيقاف المعاينة.';return;}\n        try{audio.currentTime=0;await audio.play();preview.textContent='■ إيقاف';status.textContent='يتم تشغيل النغمة الآن…';}\n        catch(error){preview.textContent='▶ استماع';status.textContent='تعذر تشغيل الملف داخل المتصفح. جرّب MP3 أو WAV وتأكد من رفع مستوى صوت الوسائط.';}\n      });\n      audio.addEventListener('ended',()=>{preview.textContent='▶ استماع';status.textContent='انتهت معاينة النغمة.';});\n      audio.addEventListener('error',()=>{preview.textContent='▶ استماع';status.textContent='صيغة الملف غير مدعومة في هذا المتصفح؛ جرّب MP3.';});
+      preview.addEventListener('click',async()=>{
+        if(!audio.src)return;
+        if(!audio.paused){audio.pause();preview.textContent='▶ استماع';status.textContent='تم إيقاف المعاينة.';return;}
+        try{audio.currentTime=0;await audio.play();preview.textContent='■ إيقاف';status.textContent='يتم تشغيل النغمة الآن…';}
+        catch(error){preview.textContent='▶ استماع';status.textContent='تعذر تشغيل الملف داخل المتصفح. جرّب MP3 أو WAV وتأكد من رفع مستوى صوت الوسائط.';}
+      });
+      audio.addEventListener('ended',()=>{preview.textContent='▶ استماع';status.textContent='انتهت معاينة النغمة.';});
+      audio.addEventListener('error',()=>{preview.textContent='▶ استماع';status.textContent='صيغة الملف غير مدعومة في هذا المتصفح؛ جرّب MP3.';});
       saveButton.addEventListener('click',async()=>{
         const selected=file.files&&file.files[0];if(!selected)return;
         try{
