@@ -1,127 +1,212 @@
 from pathlib import Path
-import re, shutil
+import shutil
 
-root=Path("android-app/android/app/src/main")
-src=Path("app-source/assets/adhan-default.mp3")
-if not src.is_file(): raise SystemExit("Missing app-source/assets/adhan-default.mp3")
-raw=root/"res/raw"
-raw.mkdir(parents=True,exist_ok=True)
-shutil.copy2(src,raw/"adhan_default.mp3")
+ROOT = Path("android-app/android/app/src/main")
+JAVA = ROOT / "java/com/aya/alquran"
+SRC = Path("app-source/assets/adhan-default.mp3")
+if not SRC.is_file():
+    raise SystemExit("Missing app-source/assets/adhan-default.mp3")
 
-receiver=root/"java/com/aya/alquran/AyaAdhanReceiver.java"
-s=receiver.read_text(encoding="utf-8")
-s=s.replace('static final String CHANNEL = "aya_adhan_alerts";',
-            'static final String CHANNEL = "aya_adhan_alerts_v11";', 1)
+raw = ROOT / "res/raw"
+raw.mkdir(parents=True, exist_ok=True)
+shutil.copy2(SRC, raw / "adhan_default.mp3")
 
-if "import android.net.Uri;" not in s:
-    s=s.replace("import android.os.Build;", "import android.os.Build;\nimport android.net.Uri;", 1)
+receiver = JAVA / "AyaAdhanReceiver.java"
+if not receiver.is_file():
+    raise SystemExit("AyaAdhanReceiver.java was not generated before the audio patch")
 
-if "createAyaAdhanChannel" not in s:
-    # Locate onReceive and obtain its Context variable without regex.
-    p=s.find("onReceive(")
-    if p < 0:
-        raise SystemExit("AyaAdhanReceiver.onReceive was not found")
-    q=s.find("Context ", p)
-    if q < 0:
-        raise SystemExit("Context parameter in onReceive was not found")
-    q += len("Context ")
-    e=q
-    while e < len(s) and (s[e].isalnum() or s[e] == "_"):
-        e += 1
-    context_name=s[q:e]
-    if not context_name:
-        raise SystemExit("Context parameter name is empty")
+receiver.write_text(r'''package com.aya.alquran;
 
-    # Find the NotificationChannel constructor and its balanced closing parenthesis.
-    p=s.find("new NotificationChannel(")
-    if p < 0:
-        raise SystemExit("NotificationChannel constructor was not found")
-    op=s.find("(",p)
-    depth=0
-    e=None
-    for i in range(op,len(s)):
-        if s[i]=="(":
-            depth+=1
-        elif s[i]==")":
-            depth-=1
-            if depth==0:
-                e=i+1
-                break
-    if e is None:
-        raise SystemExit("NotificationChannel constructor is malformed")
-    s=s[:p]+"createAyaAdhanChannel("+context_name+")"+s[e:]
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.media.AudioAttributes;
+import android.net.Uri;
+import android.os.Build;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
-    helper="""
-    private static NotificationChannel createAyaAdhanChannel(Context context) {
+public class AyaAdhanReceiver extends BroadcastReceiver {
+    static final String DEFAULT_CHANNEL = "aya_adhan_alerts_v12";
+    static final String PREF_SOUND_URI = "aya_adhan_sound_uri";
+    static final String PREF_SOUND_CHANNEL = "aya_adhan_sound_channel";
+
+    static Uri soundUri(Context context) {
+        String saved = context.getSharedPreferences(AyaAdhanScheduler.PREFS, Context.MODE_PRIVATE)
+            .getString(PREF_SOUND_URI, null);
+        if (saved != null && !saved.isEmpty()) {
+            try { return Uri.parse(saved); } catch (Exception ignored) {}
+        }
+        return Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.adhan_default);
+    }
+
+    static String channelId(Context context) {
+        return context.getSharedPreferences(AyaAdhanScheduler.PREFS, Context.MODE_PRIVATE)
+            .getString(PREF_SOUND_CHANNEL, DEFAULT_CHANNEL);
+    }
+
+    static void ensureChannel(Context context, NotificationManager manager) {
+        if (Build.VERSION.SDK_INT < 26 || manager == null) return;
+        String id = channelId(context);
+        if (manager.getNotificationChannel(id) != null) return;
         NotificationChannel channel = new NotificationChannel(
-            CHANNEL, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
-        Uri sound = Uri.parse("android.resource://" + context.getPackageName()
-            + "/" + R.raw.adhan_default);
-        channel.setSound(sound, new android.media.AudioAttributes.Builder()
-            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
-            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            id, "تنبيهات الأذان", NotificationManager.IMPORTANCE_HIGH);
+        channel.setDescription("تنبيه وقت الصلاة بالنغمة التي اختارها المستخدم");
+        channel.setSound(soundUri(context), new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build());
-        return channel;
+        manager.createNotificationChannel(channel);
     }
-"""
-    idx=s.rfind("}")
-    if idx < 0:
-        raise SystemExit("Receiver class closing brace not found")
-    s=s[:idx]+helper+s[idx:]
-receiver.write_text(s,encoding="utf-8")
 
-bridge=root/"java/com/aya/alquran/AyaAdhanBridge.java"
-b=bridge.read_text(encoding="utf-8")
-if "openSoundSettings" not in b:
-    marker='    @JavascriptInterface public void requestExactAlarmPermission() {'
-    method='''    @JavascriptInterface public void openSoundSettings() {
+    @Override public void onReceive(Context context, Intent intent) {
+        String key = intent.getStringExtra(AyaAdhanScheduler.EXTRA_KEY);
+        String name = intent.getStringExtra(AyaAdhanScheduler.EXTRA_NAME);
+        long when = intent.getLongExtra(AyaAdhanScheduler.EXTRA_TIME, 0L);
+        if (key == null || name == null) return;
+        if (!context.getSharedPreferences(AyaAdhanScheduler.PREFS, Context.MODE_PRIVATE)
+                .getBoolean(key, false)) return;
+
+        NotificationManager manager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        ensureChannel(context, manager);
+        Uri sound = soundUri(context);
+        String channel = channelId(context);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channel)
+            .setSmallIcon(R.drawable.ic_stat_aya)
+            .setContentTitle("حان الآن وقت صلاة " + name)
+            .setContentText("حيّ على الصلاة")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true);
+        if (Build.VERSION.SDK_INT < 26) builder.setSound(sound);
+
         try {
-            if (Build.VERSION.SDK_INT >= 26) {
-                Intent i = new Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
-                i.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, activity.getPackageName());
-                i.putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, AyaAdhanReceiver.CHANNEL);
-                activity.startActivity(i);
-            } else {
-                Intent i = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
-                i.putExtra("app_package", activity.getPackageName());
-                i.putExtra("app_uid", activity.getApplicationInfo().uid);
-                activity.startActivity(i);
-            }
-        } catch (Exception ignored) {}
+            NotificationManagerCompat.from(context).notify(
+                8500 + Math.abs(key.hashCode() % 500), builder.build());
+        } catch (SecurityException ignored) {}
+        AyaAdhanScheduler.scheduleNextDay(context, key, name, when);
     }
-'''
-    if marker in b:
-        b=b.replace(marker,method+marker,1)
-    else:
-        # The workflow may restore an older generated bridge without this method.
-        # Insert before the final class brace instead of depending on a method anchor.
-        idx=b.rfind("}")
-        if idx < 0:
-            raise SystemExit("AyaAdhanBridge class closing brace not found")
-        b=b[:idx]+method+b[idx:]
-    bridge.write_text(b,encoding="utf-8")
+}
+''', encoding="utf-8")
 
-js=Path("app-source/js/32-aya-prayer-times.js")
-t=js.read_text(encoding="utf-8")
-old='<div class="aya-adhan-options" id="ayaAdhanOptions"></div><div class="aya-adhan-note" id="ayaAdhanNote">'
-new='<div class="aya-adhan-options" id="ayaAdhanOptions"></div><button type="button" id="ayaAdhanSoundSettings" class="aya-prayer-toggle" style="width:100%;margin-top:10px">🎵 اختيار نغمة الأذان</button><div class="aya-adhan-note" id="ayaAdhanNote">'
-if old not in t: raise SystemExit("Adhan settings UI anchor missing")
-t=t.replace(old,new,1)
-marker='  function syncAdhanAlarms(){'
-handler='''  document.addEventListener('click',e=>{
-    if(e.target.closest('#ayaAdhanSoundSettings')){
-      if(window.AyaAdhan?.openSoundSettings)window.AyaAdhan.openSoundSettings();
-      else {const n=$('ayaAdhanNote');if(n)n.textContent='اختيار النغمة متاح في تطبيق أندرويد من إعدادات إشعارات الأذان.';}
+bridge = JAVA / "AyaAdhanBridge.java"
+if not bridge.is_file():
+    raise SystemExit("AyaAdhanBridge.java was not generated before the audio patch")
+b = bridge.read_text(encoding="utf-8")
+if "saveSound(String name, String encoded)" not in b:
+    imports = """import android.content.ContentValues;
+import android.media.MimeTypeMap;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+"""
+    anchor = "import android.webkit.JavascriptInterface;"
+    if anchor not in b:
+        raise SystemExit("Cannot find imports anchor in AyaAdhanBridge.java")
+    b = b.replace(anchor, imports + anchor, 1)
+    methods = r'''
+    @JavascriptInterface public boolean saveSound(String name, String encoded) {
+        if (encoded == null || encoded.isEmpty()) return false;
+        Uri created = null;
+        try {
+            byte[] data = Base64.decode(encoded, Base64.DEFAULT);
+            if (data.length == 0 || data.length > 12 * 1024 * 1024) return false;
+            String safe = (name == null ? "adhan.mp3" : name).replaceAll("[^A-Za-z0-9._-]", "_");
+            if (safe.length() > 70) safe = safe.substring(safe.length() - 70);
+            String mime = safe.toLowerCase().endsWith(".wav") ? "audio/wav" :
+                (safe.toLowerCase().endsWith(".m4a") ? "audio/mp4" : "audio/mpeg");
+
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, "Aya_" + safe);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_NOTIFICATIONS + "/Aya");
+                values.put(MediaStore.MediaColumns.IS_PENDING, 1);
+                created = activity.getContentResolver().insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values);
+                if (created == null) return false;
+                try (OutputStream out = activity.getContentResolver().openOutputStream(created)) {
+                    if (out == null) throw new IllegalStateException("Cannot open saved audio");
+                    out.write(data);
+                    out.flush();
+                }
+                ContentValues ready = new ContentValues();
+                ready.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                activity.getContentResolver().update(created, ready, null, null);
+            } else {
+                File folder = new File(activity.getExternalFilesDir(Environment.DIRECTORY_NOTIFICATIONS), "Aya");
+                if (!folder.exists() && !folder.mkdirs()) return false;
+                File file = new File(folder, "adhan_custom_" + System.currentTimeMillis() + "_" + safe);
+                try (FileOutputStream out = new FileOutputStream(file)) {
+                    out.write(data);
+                    out.flush();
+                }
+                created = Uri.fromFile(file);
+            }
+
+            String uri = created.toString();
+            String channel = "aya_adhan_custom_" + Integer.toHexString(uri.hashCode());
+            activity.getSharedPreferences(AyaAdhanScheduler.PREFS, Context.MODE_PRIVATE)
+                .edit().putString(AyaAdhanReceiver.PREF_SOUND_URI, uri)
+                .putString(AyaAdhanReceiver.PREF_SOUND_CHANNEL, channel).apply();
+            return true;
+        } catch (Exception error) {
+            if (created != null && Build.VERSION.SDK_INT >= 29) {
+                try { activity.getContentResolver().delete(created, null, null); } catch (Exception ignored) {}
+            }
+            return false;
+        }
     }
-  });
+
+    @JavascriptInterface public boolean useDefaultSound() {
+        try {
+            activity.getSharedPreferences(AyaAdhanScheduler.PREFS, Context.MODE_PRIVATE).edit()
+                .remove(AyaAdhanReceiver.PREF_SOUND_URI)
+                .putString(AyaAdhanReceiver.PREF_SOUND_CHANNEL, AyaAdhanReceiver.DEFAULT_CHANNEL)
+                .apply();
+            return true;
+        } catch (Exception ignored) { return false; }
+    }
 '''
-if 'ayaAdhanSoundSettings' not in t[t.find(marker)-500:t.find(marker)]:
-    if marker not in t: raise SystemExit("JS sync anchor missing")
-    t=t.replace(marker,handler+marker,1)
-js.write_text(t,encoding="utf-8")
-# Capacitor sync already ran; refresh web and native copies with the patched settings UI.
-web_js=Path("android-app/www/js/32-aya-prayer-times.js")
-if web_js.parent.is_dir(): web_js.write_text(t,encoding="utf-8")
-native_js=Path("android-app/android/app/src/main/assets/public/js/32-aya-prayer-times.js")
-if native_js.parent.is_dir(): native_js.write_text(t,encoding="utf-8")
-print("Installed offline bundled default adhan sound and Android channel sound settings.")
+    pos = b.rfind("}")
+    if pos < 0:
+        raise SystemExit("AyaAdhanBridge class closing brace not found")
+    b = b[:pos] + methods + "\n" + b[pos:]
+    bridge.write_text(b, encoding="utf-8")
+
+# Remove the obsolete white button that opened Android's channel settings.
+js_candidates = [
+    Path("app-source/js/32-aya-prayer-times.js"),
+    Path("js/32-aya-prayer-times.js"),
+]
+for js in js_candidates:
+    if not js.is_file():
+        continue
+    text = js.read_text(encoding="utf-8")
+    text = text.replace(
+        '<div class="aya-adhan-options" id="ayaAdhanOptions"></div><button type="button" id="ayaAdhanSoundSettings" class="aya-prayer-toggle" style="width:100%;margin-top:10px">🎵 اختيار نغمة الأذان</button><div class="aya-adhan-note" id="ayaAdhanNote">',
+        '<div class="aya-adhan-options" id="ayaAdhanOptions"></div><div class="aya-adhan-note" id="ayaAdhanNote">'
+    )
+    start = text.find("  document.addEventListener('click',e=>{\n    if(e.target.closest('#ayaAdhanSoundSettings'))")
+    if start >= 0:
+        end = text.find("  });\n", start)
+        if end >= 0:
+            text = text[:start] + text[end + 5:]
+    js.write_text(text, encoding="utf-8")
+
+# Keep the generated web and Android copies identical to the source JS.
+source = next((p for p in js_candidates if p.is_file()), None)
+if source:
+    text = source.read_text(encoding="utf-8")
+    for target in [
+        Path("android-app/www/js/32-aya-prayer-times.js"),
+        Path("android-app/android/app/src/main/assets/public/js/32-aya-prayer-times.js"),
+    ]:
+        if target.parent.is_dir():
+            target.write_text(text, encoding="utf-8")
+
+print("Native Android adhan sound selection and default sound integration installed.")
