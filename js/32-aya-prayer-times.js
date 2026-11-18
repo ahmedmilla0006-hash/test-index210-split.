@@ -240,10 +240,10 @@
         const selected=file.files&&file.files[0];
         preview.disabled=!selected;saveButton.disabled=!selected;
         if(!selected){audio.pause();audio.removeAttribute('src');audio.hidden=true;return;}
-        if(!selected.type.startsWith('audio/')){file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='الرجاء اختيار ملف صوتي.';return;}
+        const audioExtension=/\.(mp3|m4a|aac|wav|ogg|oga|opus|webm|mp4)$/i.test(selected.name||'');\n        if(selected.type&&!selected.type.startsWith('audio/')&&!audioExtension){file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='الرجاء اختيار ملف صوتي مدعوم مثل MP3.';return;}
         pendingUrl=URL.createObjectURL(selected);audio.src=pendingUrl;audio.hidden=false;status.textContent='تم اختيار: '+selected.name;
       });
-      preview.addEventListener('click',()=>{if(audio.src){audio.currentTime=0;audio.play().catch(()=>status.textContent='تعذر تشغيل المعاينة.');}});
+      preview.addEventListener('click',async()=>{\n        if(!audio.src)return;\n        if(!audio.paused){audio.pause();preview.textContent='▶ استماع';status.textContent='تم إيقاف المعاينة.';return;}\n        try{audio.currentTime=0;await audio.play();preview.textContent='■ إيقاف';status.textContent='يتم تشغيل النغمة الآن…';}\n        catch(error){preview.textContent='▶ استماع';status.textContent='تعذر تشغيل الملف داخل المتصفح. جرّب MP3 أو WAV وتأكد من رفع مستوى صوت الوسائط.';}\n      });\n      audio.addEventListener('ended',()=>{preview.textContent='▶ استماع';status.textContent='انتهت معاينة النغمة.';});\n      audio.addEventListener('error',()=>{preview.textContent='▶ استماع';status.textContent='صيغة الملف غير مدعومة في هذا المتصفح؛ جرّب MP3.';});
       saveButton.addEventListener('click',async()=>{
         const selected=file.files&&file.files[0];if(!selected)return;
         try{
