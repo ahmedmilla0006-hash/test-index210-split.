@@ -175,6 +175,15 @@
       $('ayaPrayerManual').onsubmit=e=>{e.preventDefault();loadCity($('ayaPrayerCityInput').value.trim(),$('ayaPrayerCountryInput').value.trim())};
       $('ayaPrayerAuto').onclick=()=>{state.mode='auto';save();$('ayaPrayerManual').hidden=true;loadAuto(true)};
     }
+    // اربط زر الاختيار خارج شرط إنشاء النافذة حتى يعمل أيضًا إذا كانت النافذة موجودة مسبقًا.
+    const manualToggle=$('ayaPrayerManualToggle'),manualForm=$('ayaPrayerManual'),manualCity=$('ayaPrayerCityInput');
+    if(manualToggle&&manualForm){
+      manualToggle.onclick=event=>{
+        event.preventDefault();
+        manualForm.hidden=!manualForm.hidden;
+        if(!manualForm.hidden&&manualCity)setTimeout(()=>manualCity.focus(),50);
+      };
+    }
   }
   function open(){installUI();$('ayaPrayerOverlay').classList.add('show');render();if(state.mode==='auto'&&Date.now()-state.updated>30*60*1000)loadAuto(false);else if(!state.timings||state.date!==dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone))loadCurrent()}
   function openQibla(){
