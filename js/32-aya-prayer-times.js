@@ -53,6 +53,12 @@
       .aya-adhan-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
       .aya-adhan-option{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:10px;background:rgba(128,150,135,.12);font-size:14px}
       .aya-adhan-option input{width:20px;height:20px;accent-color:var(--green,#16803b)}
+      .aya-adhan-sound-picker{margin-top:12px;padding:12px;border-radius:12px;background:rgba(128,150,135,.10);border:1px solid rgba(22,128,59,.2)}
+      .aya-adhan-sound-picker h4{margin:0 0 5px;font-size:15px}.aya-adhan-sound-picker p{font-size:12px;opacity:.75;margin:0 0 9px;line-height:1.7}
+      .aya-adhan-sound-row{display:flex;gap:8px;align-items:center;margin:7px 0}.aya-adhan-sound-row input{min-width:0;max-width:100%;font:inherit}
+      .aya-adhan-sound-row button{border:1px solid rgba(22,128,59,.3);border-radius:9px;padding:9px;background:var(--green,#16803b);color:#fff;font:inherit}
+      .aya-adhan-sound-row button:disabled{opacity:.45}.aya-adhan-sound-picker audio{width:100%;margin-top:7px}.aya-adhan-sound-picker #ayaAdhanSoundStatus{font-size:12px;opacity:.8;margin-top:7px}
+
       .aya-prayer-actions button,#ayaPrayerManual button{flex:1;border:1px solid rgba(120,150,130,.35);border-radius:10px;padding:11px 8px;background:var(--green,#16803b);color:white;font:inherit}
       #ayaPrayerManual{display:grid;gap:8px;margin-top:12px}
       #ayaPrayerManual[hidden]{display:none}
@@ -220,6 +226,49 @@
   function renderAdhanSettings(){
     const box=$('ayaAdhanOptions');if(!box)return;
     box.innerHTML=prayerOrder.map(k=>'<label class="aya-adhan-option"><span>'+names[k]+'</span><input type="checkbox" data-adhan="'+k+'" '+(state.adhan[k]?'checked':'')+' aria-label="تنبيه صلاة '+names[k]+'"></label>').join('');
+    let sound=$('ayaAdhanSoundPicker');
+    if(!sound){
+      sound=document.createElement('section');
+      sound.id='ayaAdhanSoundPicker';
+      sound.className='aya-adhan-sound-picker';
+      sound.innerHTML='<h4>🎵 نغمة الأذان</h4><p>اختر ملفًا صوتيًا من جهازك، واستمع إليه قبل الحفظ.</p><div class="aya-adhan-sound-row"><input id="ayaAdhanSoundFile" type="file" accept="audio/*"><button type="button" id="ayaAdhanSoundPreview" disabled>▶ استماع</button></div><div class="aya-adhan-sound-row"><button type="button" id="ayaAdhanSoundSave" disabled>حفظ النغمة</button><button type="button" id="ayaAdhanSoundDefault">استعادة الافتراضية</button></div><audio id="ayaAdhanSoundAudio" controls hidden></audio><div id="ayaAdhanSoundStatus" role="status">النغمة الافتراضية محددة.</div>';
+      box.insertAdjacentElement('afterend',sound);
+      const file=$('ayaAdhanSoundFile'),audio=$('ayaAdhanSoundAudio'),preview=$('ayaAdhanSoundPreview'),saveButton=$('ayaAdhanSoundSave'),status=$('ayaAdhanSoundStatus');
+      let pendingUrl='';
+      file.addEventListener('change',()=>{
+        if(pendingUrl)URL.revokeObjectURL(pendingUrl);
+        const selected=file.files&&file.files[0];
+        preview.disabled=!selected;saveButton.disabled=!selected;
+        if(!selected){audio.pause();audio.removeAttribute('src');audio.hidden=true;return;}
+        if(!selected.type.startsWith('audio/')){file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='الرجاء اختيار ملف صوتي.';return;}
+        pendingUrl=URL.createObjectURL(selected);audio.src=pendingUrl;audio.hidden=false;status.textContent='تم اختيار: '+selected.name;
+      });
+      preview.addEventListener('click',()=>{if(audio.src){audio.currentTime=0;audio.play().catch(()=>status.textContent='تعذر تشغيل المعاينة.');}});
+      saveButton.addEventListener('click',async()=>{
+        const selected=file.files&&file.files[0];if(!selected)return;
+        try{
+          await new Promise((resolve,reject)=>{
+            const request=indexedDB.open('AyaAdhanSounds',1);
+            request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('sounds'))request.result.createObjectStore('sounds');};
+            request.onerror=()=>reject(request.error);
+            request.onsuccess=()=>{const db=request.result,tx=db.transaction('sounds','readwrite');tx.objectStore('sounds').put({blob:selected,name:selected.name,type:selected.type},'custom');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
+          });
+          localStorage.setItem('ayaAdhanSoundChoice','custom');
+          status.textContent='حُفظت النغمة على هذا الجهاز: '+selected.name;
+        }catch(error){status.textContent='تعذر حفظ النغمة محليًا: '+(error.message||'');}
+      });
+      $('ayaAdhanSoundDefault').addEventListener('click',async()=>{
+        try{
+          const request=indexedDB.open('AyaAdhanSounds',1);
+          await new Promise((resolve,reject)=>{
+            request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('sounds'))request.result.createObjectStore('sounds');};
+            request.onerror=()=>reject(request.error);
+            request.onsuccess=()=>{const db=request.result,tx=db.transaction('sounds','readwrite');tx.objectStore('sounds').delete('custom');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
+          });
+          localStorage.removeItem('ayaAdhanSoundChoice');audio.pause();audio.removeAttribute('src');audio.hidden=true;file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='تمت استعادة النغمة الافتراضية.';
+        }catch(error){status.textContent='تعذرت استعادة النغمة الافتراضية.';}
+      });
+    }
     if(!box.dataset.bound){
       box.dataset.bound='1';
       box.addEventListener('change',e=>{
