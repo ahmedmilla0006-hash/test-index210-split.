@@ -265,24 +265,34 @@
       saveButton.addEventListener('click',async()=>{
         const selected=file.files&&file.files[0];if(!selected)return;
         try{
-          await new Promise((resolve,reject)=>{
-            const request=indexedDB.open('AyaAdhanSounds',1);
-            request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('sounds'))request.result.createObjectStore('sounds');};
-            request.onerror=()=>reject(request.error);
-            request.onsuccess=()=>{const db=request.result,tx=db.transaction('sounds','readwrite');tx.objectStore('sounds').put({blob:selected,name:selected.name,type:selected.type},'custom');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
-          });
+          if(window.AyaAdhan&&typeof window.AyaAdhan.saveSound==='function'){
+            const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(reader.error||new Error('تعذرت قراءة الملف'));reader.readAsDataURL(selected);});
+            const base64=dataUrl.substring(dataUrl.indexOf(',')+1);
+            if(!base64||!window.AyaAdhan.saveSound(selected.name,base64))throw new Error('تعذر حفظ النغمة في مساحة أندرويد. جرّب ملف MP3 أصغر.');
+          }else{
+            await new Promise((resolve,reject)=>{
+              const request=indexedDB.open('AyaAdhanSounds',1);
+              request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('sounds'))request.result.createObjectStore('sounds');};
+              request.onerror=()=>reject(request.error);
+              request.onsuccess=()=>{const db=request.result,tx=db.transaction('sounds','readwrite');tx.objectStore('sounds').put({blob:selected,name:selected.name,type:selected.type},'custom');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
+            });
+          }
           localStorage.setItem('ayaAdhanSoundChoice','custom');
-          status.textContent='حُفظت النغمة على هذا الجهاز: '+selected.name;
-        }catch(error){status.textContent='تعذر حفظ النغمة محليًا: '+(error.message||'');}
+          status.textContent='تم حفظ النغمة واعتمادها لتنبيه الأذان: '+selected.name;
+        }catch(error){status.textContent='تعذر حفظ النغمة: '+(error.message||'');}
       });
       $('ayaAdhanSoundDefault').addEventListener('click',async()=>{
         try{
-          const request=indexedDB.open('AyaAdhanSounds',1);
-          await new Promise((resolve,reject)=>{
-            request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('sounds'))request.result.createObjectStore('sounds');};
-            request.onerror=()=>reject(request.error);
-            request.onsuccess=()=>{const db=request.result,tx=db.transaction('sounds','readwrite');tx.objectStore('sounds').delete('custom');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
-          });
+          if(window.AyaAdhan&&typeof window.AyaAdhan.useDefaultSound==='function'){
+            if(!window.AyaAdhan.useDefaultSound())throw new Error('تعذر اعتماد النغمة الافتراضية في أندرويد');
+          }else{
+            const request=indexedDB.open('AyaAdhanSounds',1);
+            await new Promise((resolve,reject)=>{
+              request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('sounds'))request.result.createObjectStore('sounds');};
+              request.onerror=()=>reject(request.error);
+              request.onsuccess=()=>{const db=request.result,tx=db.transaction('sounds','readwrite');tx.objectStore('sounds').delete('custom');tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(tx.error);};
+            });
+          }
           localStorage.removeItem('ayaAdhanSoundChoice');audio.pause();audio.removeAttribute('src');audio.hidden=true;file.value='';preview.disabled=true;saveButton.disabled=true;status.textContent='تمت استعادة النغمة الافتراضية.';
         }catch(error){status.textContent='تعذرت استعادة النغمة الافتراضية.';}
       });
