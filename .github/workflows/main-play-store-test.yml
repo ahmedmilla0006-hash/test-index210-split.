@@ -589,21 +589,6 @@ jobs:
           # Apply audio patch after notification patch restores generated Java files.
           test -f app-source/scripts/add-adhan-audio.py
           python3 app-source/scripts/add-adhan-audio.py
-          # Remove the obsolete Android sound-settings button after the legacy patch runs.
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          for name in (
-              "android-app/www/js/32-aya-prayer-times.js",
-              "android-app/android/app/src/main/assets/public/js/32-aya-prayer-times.js",
-          ):
-              p = Path(name)
-              if p.exists():
-                  s = p.read_text(encoding="utf-8")
-                  s, count = re.subn(r'<button\\b[^>]*id=["\\']ayaAdhanSoundSettings["\\'][^>]*>.*?</button>', '', s, count=1, flags=re.S)
-                  p.write_text(s, encoding="utf-8")
-                  print(f"Removed obsolete button from {name}: {count}")
-          PY
           if [ -f android-app/www/js/32-aya-prayer-times.js ]; then
             mkdir -p android-app/android/app/src/main/assets/public/js
             cp -f android-app/www/js/32-aya-prayer-times.js android-app/android/app/src/main/assets/public/js/ 2>/dev/null || true
@@ -612,7 +597,12 @@ jobs:
           ! grep -q 'تمت جدولة تنبيه' "$JAVA_DIR/AyaAdhanBridge.java"
           grep -q 'scheduleAt' android-app/www/js/32-aya-prayer-times.js
           grep -q 'AYA_ADHAN_CHANNEL_EARLY_V10' "$MAIN"
-          echo "==== Adhan schedule toast hidden ===="
+          # Verify the sound-settings control and its native Android bridge survive the full patch sequence.
+          grep -q 'ayaAdhanSoundSettings' android-app/www/js/32-aya-prayer-times.js
+          grep -q 'openSoundSettings' "$JAVA_DIR/AyaAdhanBridge.java"
+          grep -q 'aya_adhan_alerts_v11' "$JAVA_DIR/AyaAdhanReceiver.java"
+          grep -q 'setSound' "$JAVA_DIR/AyaAdhanReceiver.java"
+          echo "==== Adhan notifications and sound settings verified ===="
 
       - name: Remove invalid Activity onTaskRemoved override
         run: |
