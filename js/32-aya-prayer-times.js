@@ -176,7 +176,7 @@
       $('ayaPrayerAuto').onclick=()=>{state.mode='auto';save();$('ayaPrayerManual').hidden=true;loadAuto(true)};
     }
   }
-  function open(){installUI();$('ayaPrayerOverlay').classList.add('show');render();if(!state.timings||state.date!==dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone))loadCurrent()}
+  function open(){installUI();$('ayaPrayerOverlay').classList.add('show');render();if(state.mode==='auto'&&Date.now()-state.updated>30*60*1000)loadAuto(false);else if(!state.timings||state.date!==dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone))loadCurrent()}
   function openQibla(){
     installUI();
     $('ayaQiblaOverlay').classList.add('show');
@@ -340,10 +340,15 @@
     const t={};Object.keys(names).forEach(k=>t[k]=String(j.data.timings[k]||'').split(' ')[0]);
     return {timings:t,date:dateAtZone(zone||'Europe/Istanbul')};
   }
+  let autoLoading=false;
   async function loadAuto(force){
+    if(autoLoading)return;
+    autoLoading=true;
     $('ayaPrayerStatus').textContent='جارٍ تحديث مواقيت الصلاة…';
     try{
-      const r=await fetch('https://ipwho.is/?fields=success,city,region,country,latitude,longitude,timezone');
+      // إعادة فحص عنوان IP دون GPS أو طلب إذن الموقع، مع منع الاستفادة من نتيجة مخزنة مؤقتًا.
+      const ipUrl='https://ipwho.is/?fields=success,city,region,country,latitude,longitude,timezone&_='+Date.now();
+      const r=await fetch(ipUrl,{cache:'no-store'});
       if(!r.ok)throw Error('تعذر تحديد المدينة تلقائيًا');const g=await r.json();
       if(!g.success||!Number.isFinite(Number(g.latitude))||!Number.isFinite(Number(g.longitude)))throw Error('لم يتمكن الاتصال من تحديد المدينة');
       const zone=g.timezone?.id||'Europe/Istanbul';
@@ -353,7 +358,7 @@
       try{
         const q=encodeURIComponent(g.city||g.region||'');
         if(q){
-          const gr=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+q+'&count=10&language=ar&format=json');
+          const gr=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+q+'&count=10&language=ar&format=json',{cache:'no-store'});
           if(gr.ok){
             const gj=await gr.json(),list=gj.results||[];
             const match=list.find(x=>String(x.country_code||'').toUpperCase()===String(g.country_code||'').toUpperCase())||list[0];
@@ -365,6 +370,7 @@
       state={...state,mode:'auto',city:displayCity,country:displayCountry,latitude:Number(g.latitude),longitude:Number(g.longitude),timezone:zone,...data,updated:Date.now()};
       save();render();
     }catch(e){$('ayaPrayerStatus').textContent=(e.message||'تعذر التحديث')+' — يمكنك اختيار المدينة يدويًا.';render()}
+    finally{autoLoading=false;}
   }
   async function loadCity(city,country){
     if(!city||!country){$('ayaPrayerStatus').textContent='اكتب اسم المدينة والدولة.';return}
@@ -444,7 +450,8 @@
       updatePrayerCountdown();
       const today=dateAtZone(state.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone);
       if(state.date!==today)loadCurrent();
-      else if(state.mode==='auto'&&Date.now()-state.updated>24*60*60*1000)loadAuto(false);
+      // فحص عنوان IP كل 30 دقيقة لاكتشاف الانتقال إلى مدينة أخرى؛ الوضع اليدوي مستثنى.
+      else if(state.mode==='auto'&&Date.now()-state.updated>30*60*1000)loadAuto(false);
     },1000);
   }
   window.AyaPrayerTimes={open,refresh:loadCurrent};
