@@ -101,7 +101,6 @@ if not bridge.is_file():
 b = bridge.read_text(encoding="utf-8")
 if "saveSound(String name, String encoded)" not in b:
     imports = """import android.content.ContentValues;
-import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
