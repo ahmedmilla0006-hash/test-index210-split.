@@ -29,7 +29,7 @@ function install(){
  const parts=split(src.getAttribute('d')||''),rows=[],tr='matrix('+[mat.a,mat.b,mat.c,mat.d,mat.e,mat.f].join(' ')+')';
  parts.forEach((d,i)=>{const g=document.createElementNS(NS,'g');g.setAttribute('transform',tr);probe.appendChild(g);const p=document.createElementNS(NS,'path');p.setAttribute('d',d);g.appendChild(p);const b=p.getBBox();const r={i:i+1,x:b.x,y:b.y,w:b.width,h:b.height,cx:b.x+b.width/2,cy:b.y+b.height/2};if(b.x<=BOX.x2&&b.x+b.width>=BOX.x1&&b.y<=BOX.y2&&b.y+b.height>=BOX.y1)rows.push(r);g.remove();});
  probe.remove();root.remove();root=null;
- out.textContent='الأجزاء المتقاطعة مع حدود الكلمة: '+rows.length+' من '+parts.length+'\\n'+rows.map(r=>'#'+r.i+' x='+r.x.toFixed(2)+' y='+r.y.toFixed(2)+' w='+r.w.toFixed(2)+' h='+r.h.toFixed(2)+' cx='+r.cx.toFixed(2)+' cy='+r.cy.toFixed(2)).join('\\n')+'\\n\\nملاحظة: التقرير هندسي ولا يقرر وحده أي جزء هو النون أو السكون.';
+ out.textContent='الأجزاء المتقاطعة مع حدود الكلمة: '+rows.length+' من '+parts.length+'\\n'+rows.map(r=>'#'+r.i+' x='+r.x.toFixed(2)+' y='+r.y.toFixed(2)+' w='+r.w.toFixed(2)+' h='+r.h.toFixed(2)+' cx='+r.cx.toFixed(2)+' cy='+r.cy.toFixed(2)).join('\\n')+'\\n\\nالمسار الخام للجزء #330 (لفحص اتصال النون بالصاد):\\n'+(parts[329]||'غير موجود')+'\\n\\nملاحظة: هذا المسار هندسي؛ لا نلوّنه قبل عزل جسم النون وعلامة السكون.';
  }catch(e){if(root)root.remove();out.textContent='فشل التحليل: '+e.message;}
  };
 }
