@@ -63,7 +63,9 @@
       const paths=[...measureRoot.querySelectorAll('path')];
       if(paths.length!==9){measureRoot.remove();throw new Error('Unexpected SVG paths');}
       const source=paths[8], parent=source.parentNode;
-      const sourceMatrix=source.getCTM();
+      const rootMatrix=root.getCTM();
+      const parentMatrix=parent.getCTM();
+      const sourceMatrix=rootMatrix&&parentMatrix?rootMatrix.inverse().multiply(parentMatrix):null;
       if(!sourceMatrix)throw new Error('Cannot resolve source SVG transform');
       const parts=splitPath(source.getAttribute('d')||'');
       const picked=[];
@@ -90,11 +92,14 @@
         sourceMatrix.d,sourceMatrix.e,sourceMatrix.f
       ].join(' ')+')');
       svg.appendChild(target);
+      const sourceTransform=source.getAttribute('transform');
+      let drawTarget=target;
+      if(sourceTransform){const g=document.createElementNS(NS,'g');g.setAttribute('transform',sourceTransform);target.appendChild(g);drawTarget=g;}
       picked.forEach(d=>{
         const p=document.createElementNS(NS,'path');p.setAttribute('d',d);
         p.setAttribute('fill',COLOR);p.setAttribute('fill-opacity','1');p.setAttribute('stroke','none');
         p.style.cssText='fill:'+COLOR+'!important;fill-opacity:1!important;stroke:none!important;opacity:1!important';
-        target.appendChild(p);
+        drawTarget.appendChild(p);
       });
       document.body.appendChild(svg);overlay=svg;attempts=0;place();
       window.addEventListener('resize',place,{passive:true});
