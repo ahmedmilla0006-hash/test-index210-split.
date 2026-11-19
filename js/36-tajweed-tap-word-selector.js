@@ -63,6 +63,7 @@
       });
       if(!best||bestD>18){status.textContent='لم تُلتقط أشكال قريبة. المس وسط الكلمة مباشرة.';return;}
       clearMarks();
+      makeOverlay();
       const ax=best.b.x+best.b.width/2,ay=best.b.y+best.b.height/2;
       // جمع مكونات الحرف ونقاطه وحركاته القريبة من موضع اللمسة.
       selected=shapes.filter(s=>{
