@@ -35,8 +35,17 @@
           pathsWithStroke:paths.filter(p=>p.hasAttribute('stroke')||p.style.stroke).length,
           pathsWithId:paths.filter(p=>p.hasAttribute('id')).length,
           pathsWithClass:paths.filter(p=>p.hasAttribute('class')).length,
-          samplePaths:paths.slice(0,12).map(p=>({id:p.getAttribute('id'),class:p.getAttribute('class'),dLength:(p.getAttribute('d')||'').length,fill:p.getAttribute('fill'),stroke:p.getAttribute('stroke')})),
-          note:'إحصاءات بنية الملف فقط؛ لا تحدد وحدها حدود حروف كلمة أَنْصَارٍ.'
+          samplePaths:paths.map((p,i)=>{
+            const d=p.getAttribute('d')||'';
+            const parent=p.parentElement;
+            return {index:i+1,dLength:d.length,moveCommands:(d.match(/[Mm]/g)||[]).length,
+              relativeMoveCommands:(d.match(/m/g)||[]).length,
+              absoluteMoveCommands:(d.match(/M/g)||[]).length,
+              fill:p.getAttribute('fill'),parentTag:parent&&parent.localName,
+              parentChildElements:parent?parent.children.length:0,
+              groupAncestors:(()=>{let n=parent,c=0;while(n&&n!==root){if(n.localName==='g')c++;n=n.parentElement;}return c;})()};
+          }),
+          note:'عدد أوامر M/m يقدّر عدد بدايات المسارات الفرعية داخل كل path، لكنه لا يثبت أن كل مسار فرعي حرف مستقل ولا يحدد كلمة أَنْصَارٍ وحدها.'
         };
         report.textContent=JSON.stringify(reportData,null,2);
       }catch(err){
