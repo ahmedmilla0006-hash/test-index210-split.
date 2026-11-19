@@ -5,9 +5,13 @@
   const PAGE=75, URL='https://www.mp3quran.net/api/quran_pages_svg/075.svg';
   const BOX={x1:171.5,y1:57.4,x2:202.5,y2:87.6};
   const NS='http://www.w3.org/2000/svg', COLOR='#168443';
-  let overlay=null, lastPage=0, busy=false, resizeTimer=0;
+  let overlay=null, lastPage=0, busy=false, resizeTimer=0, attempts=0;
   const img=document.getElementById('quranPage');
   if(!img)return;
+  function pageNow(){
+    try{if(typeof currentPage!=='undefined'&&Number(currentPage))return Number(currentPage);}catch(e){}
+    return Number(localStorage.getItem('quranPage')||1);
+  }
 
   function splitPath(d){
     const t=d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g)||[];
@@ -45,7 +49,7 @@
     overlay.style.width=r.width+'px';overlay.style.height=r.height+'px';
   }
   async function apply(){
-    if(busy||Number(window.currentPage||localStorage.getItem('quranPage')||0)!==PAGE)return;
+    if(busy||pageNow()!==PAGE)return;
     busy=true;
     try{
       const res=await fetch(URL,{cache:'force-cache'});
@@ -92,7 +96,7 @@
         p.style.cssText='fill:'+COLOR+'!important;fill-opacity:1!important;stroke:none!important;opacity:1!important';
         target.appendChild(p);
       });
-      document.body.appendChild(svg);overlay=svg;place();
+      document.body.appendChild(svg);overlay=svg;attempts=0;place();
       window.addEventListener('resize',place,{passive:true});
       window.addEventListener('scroll',place,{passive:true,capture:true});
     }catch(e){
@@ -101,12 +105,12 @@
     }finally{busy=false;}
   }
   function check(){
-    const p=Number(window.currentPage||localStorage.getItem('quranPage')||1);
+    const p=pageNow();
     if(p!==PAGE){if(lastPage===PAGE)removeOverlay();lastPage=p;return;}
     if(p===PAGE&&lastPage!==PAGE){lastPage=p;apply();}
-    else if(p===PAGE&&!overlay&&img.complete&&img.naturalWidth)apply();
+    else if(p===PAGE&&!overlay&&img.complete&&img.naturalWidth&&attempts<3){attempts++;apply();}
   }
-  img.addEventListener('load',()=>{if(Number(window.currentPage||localStorage.getItem('quranPage')||1)===PAGE){removeOverlay();apply();}});
+  img.addEventListener('load',()=>{if(pageNow()===PAGE){removeOverlay();apply();}});
   setInterval(check,500);
   window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(place,80);},{passive:true});
   check();
