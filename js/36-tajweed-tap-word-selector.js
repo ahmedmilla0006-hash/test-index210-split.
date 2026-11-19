@@ -45,9 +45,12 @@
     function clearMarks(){if(overlay)overlay.remove();overlay=null;selected=[];result.textContent='';}
     function makeOverlay(){
       overlay=document.createElementNS(NS,'g');overlay.setAttribute('id','atTapSelectionOverlay');overlay.setAttribute('pointer-events','none');
+      // أجزاء المسار المفككة يجب أن ترث تحويلات المسار الأصلي حتى تتطابق مع مواضع الحروف.
+      const transform=source.getAttribute('transform');
+      if(transform)overlay.setAttribute('transform',transform);
       source.parentNode.appendChild(overlay);
-      shapes.forEach((shape,i)=>{
-        const p=document.createElementNS(NS,'path');p.setAttribute('d',parts[i]);p.setAttribute('fill','#00a85a');p.setAttribute('fill-opacity','.82');p.setAttribute('stroke','#e00036');p.setAttribute('stroke-width','.55');p.setAttribute('vector-effect','non-scaling-stroke');overlay.appendChild(p);shape.mark=p;
+      shapes.forEach(shape=>{
+        const p=document.createElementNS(NS,'path');p.setAttribute('d',parts[shape.i]);p.setAttribute('fill','#00a85a');p.setAttribute('fill-opacity','.9');p.setAttribute('stroke','#e00036');p.setAttribute('stroke-width','.7');p.setAttribute('vector-effect','non-scaling-stroke');overlay.appendChild(p);shape.mark=p;
       });
     }
     function choose(clientX,clientY){
