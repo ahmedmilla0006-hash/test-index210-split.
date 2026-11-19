@@ -5,54 +5,18 @@
   const SVG_URL='https://www.mp3quran.net/api/quran_pages_svg/075.svg';
   const NS='http://www.w3.org/2000/svg';
   function splitSubpaths(d){
-    const tokens=d.match(/[a-zA-Z]|[-+]?(?:\\d*\\.)?\\d+(?:[eE][-+]?\\d+)?/g)||[];
-    const arity={m:2,l:2,h:1,v:1,c:6,s:4,q:4,t:2,a:7};
-    const out=[]; let i=0,cmd='',x=0,y=0,sx=0,sy=0,current=null;
-    const num=()=>Number(tokens[i++]);
-    const add=(v)=>current.push(String(v));
-    function finish(){if(current&&current.length)out.push(current.join(' '));current=null;}
-    while(i<tokens.length){
-      if(/^[a-zA-Z]$/.test(tokens[i])) cmd=tokens[i++];
-      if(!cmd) break;
-      const low=cmd.toLowerCase(), rel=cmd===low;
-      if(low==='z'){
-        if(current)add(cmd);
-        x=sx;y=sy;cmd='';continue;
-      }
-      const n=arity[low]; if(!n) break;
-      if(i>=tokens.length||/^[a-zA-Z]$/.test(tokens[i])) continue;
-      let first=true;
-      while(i<tokens.length&&!/^[a-zA-Z]$/.test(tokens[i])){
-        if(low==='m'){
-          const ox=x,oy=y,px=num(),py=num();
-          const nx=rel?ox+px:px,ny=rel?oy+py:py;
-          if(first){finish();current=['M',String(nx),String(ny)];sx=nx;sy=ny;}
-          else {current.push(rel?'l':'L',String(px),String(py));}
-          x=nx;y=ny;first=false;
-          if(i<tokens.length&&!/^[a-zA-Z]$/.test(tokens[i])){
-            // الأزواج الإضافية بعد moveto تعامل كأوامر lineto.
-            const save=cmd;cmd=rel?'l':'L';
-            while(i<tokens.length&&!/^[a-zA-Z]$/.test(tokens[i])){
-              const a=num(),b=num();current.push(cmd,String(a),String(b));x=rel?x+a:a;y=rel?y+b:b;
-            }
-            cmd=save;
-          }
-          break;
-        }
-        const vals=[];for(let k=0;k<n&&i<tokens.length&&!/^[a-zA-Z]$/.test(tokens[i]);k++)vals.push(num());
-        if(vals.length!==n)break;
-        if(!current)current=[];
-        current.push(cmd,...vals.map(String));
-        if(low==='l'||low==='t'){x=rel?x+vals[0]:vals[0];y=rel?y+vals[1]:vals[1];}
-        else if(low==='h')x=rel?x+vals[0]:vals[0];
-        else if(low==='v')y=rel?y+vals[0]:vals[0];
-        else if(low==='c'){x=rel?x+vals[4]:vals[4];y=rel?y+vals[5]:vals[5];}
-        else if(low==='s'||low==='q'){x=rel?x+vals[2]:vals[2];y=rel?y+vals[3]:vals[3];}
-        else if(low==='a'){x=rel?x+vals[5]:vals[5];y=rel?y+vals[6]:vals[6];}
-        first=false;
-      }
+    // في هذا الملف ثبت أن أوامر بدء الأشكال الفرعية كلها m صغيرة.
+    // نقسم عند أوامر m فقط، مع إبقاء بقية أوامر الرسم كما هي.
+    const starts=[];
+    const re=/m(?=[\\s,+\\-\\d.])/g;
+    let match;
+    while((match=re.exec(d))!==null) starts.push(match.index);
+    const out=[];
+    for(let i=0;i<starts.length;i++){
+      const segment=d.slice(starts[i],i+1<starts.length?starts[i+1]:d.length).trim();
+      if(segment) out.push(segment);
     }
-    finish();return out;
+    return out;
   }
   function addUI(){
     const box=document.querySelector('#ayaTajweedOverlay .at-box');
