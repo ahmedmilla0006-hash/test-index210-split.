@@ -53,6 +53,7 @@
       const doc=new DOMParser().parseFromString(await res.text(),'image/svg+xml');
       if(doc.querySelector('parsererror'))throw new Error('SVG parse error');
       const measureRoot=document.importNode(doc.documentElement,true);
+      const root=measureRoot;
       measureRoot.style.cssText='position:fixed;left:-10000px;top:0;width:1000px;height:1000px;visibility:hidden;pointer-events:none';
       document.body.appendChild(measureRoot);
       const paths=[...measureRoot.querySelectorAll('path')];
