@@ -51,21 +51,23 @@
       const res=await fetch(URL,{cache:'force-cache'});
       if(!res.ok)throw new Error('SVG unavailable');
       const doc=new DOMParser().parseFromString(await res.text(),'image/svg+xml');
-      const root=doc.documentElement;
       if(doc.querySelector('parsererror'))throw new Error('SVG parse error');
-      const paths=[...root.querySelectorAll('path')];
-      if(paths.length!==9)throw new Error('Unexpected SVG paths');
+      const measureRoot=document.importNode(doc.documentElement,true);
+      measureRoot.style.cssText='position:fixed;left:-10000px;top:0;width:1000px;height:1000px;visibility:hidden;pointer-events:none';
+      document.body.appendChild(measureRoot);
+      const paths=[...measureRoot.querySelectorAll('path')];
+      if(paths.length!==9){measureRoot.remove();throw new Error('Unexpected SVG paths');}
       const source=paths[8], parent=source.parentNode;
       const parts=splitPath(source.getAttribute('d')||'');
       const picked=[];
-      parts.forEach((d,i)=>{
-        const p=doc.createElementNS(NS,'path');p.setAttribute('d',d);parent.appendChild(p);
-        let b=null;try{b=p.getBBox();}catch(e){}
-        p.remove();
-        if(b&&b.width>=0&&b.height>=0&&b.x<=BOX.x2&&b.x+b.width>=BOX.x1&&b.y<=BOX.y2&&b.y+b.height>=BOX.y1){
-          picked.push(d);
-        }
-      });
+      try{
+        parts.forEach(d=>{
+          const p=document.createElementNS(NS,'path');p.setAttribute('d',d);parent.appendChild(p);
+          let box=null;try{box=p.getBBox();}catch(e){}
+          p.remove();
+          if(box&&box.width>=0&&box.height>=0&&box.x<=BOX.x2&&box.x+box.width>=BOX.x1&&box.y<=BOX.y2&&box.y+box.height>=BOX.y1)picked.push(d);
+        });
+      }finally{measureRoot.remove();}
       if(!picked.length)throw new Error('No word shapes found in reviewed bounds');
       const vb=root.getAttribute('viewBox');
       if(!vb)throw new Error('Missing SVG viewBox');
@@ -81,6 +83,8 @@
         const tr=n.getAttribute&&n.getAttribute('transform');if(tr)g.setAttribute('transform',tr);
         target.appendChild(g);target=g;
       });
+      const sourceTransform=source.getAttribute('transform');
+      if(sourceTransform){const g=document.createElementNS(NS,'g');g.setAttribute('transform',sourceTransform);target.appendChild(g);target=g;}
       picked.forEach(d=>{
         const p=document.createElementNS(NS,'path');p.setAttribute('d',d);
         p.setAttribute('fill',COLOR);p.setAttribute('fill-opacity','1');p.setAttribute('stroke','none');
