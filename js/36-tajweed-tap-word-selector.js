@@ -59,7 +59,8 @@
     }
     function choose(clientX,clientY){
       if(!svg||!source||!shapes.length)return;
-      const inv=source.getScreenCTM()?.inverse();if(!inv){status.textContent='تعذر حساب موضع اللمسة.';return;}
+      // حدود الأجزاء حُسبت في إحداثيات parentNode؛ حوّل اللمسة إلى النظام نفسه.
+      const inv=source.parentNode.getScreenCTM()?.inverse();if(!inv){status.textContent='تعذر حساب موضع اللمسة.';return;}
       const pt=new DOMPoint(clientX,clientY).matrixTransform(inv);
       let best=null,bestD=Infinity;
       shapes.forEach(s=>{
