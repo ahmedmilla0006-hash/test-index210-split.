@@ -49,10 +49,10 @@
     if(!box||document.getElementById('atGeometryBtn'))return false;
     const area=document.createElement('div');
     area.style.cssText='margin-top:14px;padding-top:12px;border-top:1px solid #8885';
-    area.innerHTML='<button id="atGeometryBtn" type="button" style="width:100%;padding:11px;border:0;border-radius:10px;background:#176b55;color:white;font-weight:700">تحليل الأشكال هندسيًا — صفحة 75</button><div id="atGeometryStatus" style="font-size:13px;line-height:1.8;margin-top:8px"></div><div id="atGeometryPreview" style="max-height:55vh;overflow:auto;background:#fff;margin-top:8px;text-align:center"></div><button id="atGeometryCopy" type="button" style="display:none;width:100%;padding:9px;margin-top:8px">نسخ إحداثيات الأشكال (CSV)</button>';
+    area.innerHTML='<button id="atGeometryBtn" type="button" style="width:100%;padding:11px;border:0;border-radius:10px;background:#176b55;color:white;font-weight:700">تحليل الأشكال هندسيًا — صفحة 75</button><div id="atGeometryStatus" style="font-size:13px;line-height:1.8;margin-top:8px"></div><div id="atGeometryPreview" style="max-height:55vh;overflow:auto;background:#fff;margin-top:8px;text-align:center"></div><button id="atGeometrySelect" type="button" style="display:none;width:100%;padding:10px;margin-top:8px">تحديد منطقة حول الكلمة بالسحب</button><div id="atGeometrySelectionStatus" style="font-size:13px;line-height:1.8;margin-top:6px"></div><button id="atGeometryCopy" type="button" style="display:none;width:100%;padding:9px;margin-top:8px">نسخ إحداثيات الأشكال (CSV)</button>';
     box.appendChild(area);
-    const status=area.querySelector('#atGeometryStatus'),preview=area.querySelector('#atGeometryPreview'),copy=area.querySelector('#atGeometryCopy');
-    let csv='';
+    const status=area.querySelector('#atGeometryStatus'),preview=area.querySelector('#atGeometryPreview'),copy=area.querySelector('#atGeometryCopy'),selectBtn=area.querySelector('#atGeometrySelect'),selectionStatus=area.querySelector('#atGeometrySelectionStatus');
+    let csv='',allRows=[],svgRef=null,selectMode=false,dragStart=null,hitRect=null,selectionRect=null;
     area.querySelector('#atGeometryBtn').addEventListener('click',async function(){
       this.disabled=true;this.textContent='جارٍ تحليل 1317 شكلًا…';status.textContent='يتم تحميل SVG وحساب حدود الأشكال؛ قد يستغرق ذلك لحظات.';preview.replaceChildren();copy.style.display='none';
       try{
@@ -90,13 +90,22 @@
           const label=document.createElementNS(NS,'text');label.setAttribute('x',String(x+w/2));label.setAttribute('y',String(y+h/2));label.setAttribute('font-size','2.4');label.setAttribute('text-anchor','middle');label.setAttribute('fill','#111');label.textContent=String(index+1);svg.appendChild(label);
         });
         sourceRoot.remove();
+        allRows=rows;svgRef=svg;
+        // Transparent interaction layer: drag a rectangle around the target word.
+        hitRect=document.createElementNS(NS,'rect');hitRect.setAttribute('x','0');hitRect.setAttribute('y','0');hitRect.setAttribute('width','345');hitRect.setAttribute('height','550');hitRect.setAttribute('fill','transparent');hitRect.setAttribute('pointer-events','all');svg.appendChild(hitRect);
+        selectionRect=document.createElementNS(NS,'rect');selectionRect.setAttribute('fill','#ffcc00');selectionRect.setAttribute('fill-opacity','.16');selectionRect.setAttribute('stroke','#d00');selectionRect.setAttribute('stroke-width','1');selectionRect.setAttribute('pointer-events','none');selectionRect.style.display='none';svg.appendChild(selectionRect);
+        const point=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());};
+        hitRect.addEventListener('pointerdown',e=>{if(!selectMode)return;e.preventDefault();dragStart=point(e);selectionRect.setAttribute('x',dragStart.x);selectionRect.setAttribute('y',dragStart.y);selectionRect.setAttribute('width','0');selectionRect.setAttribute('height','0');selectionRect.style.display='block';hitRect.setPointerCapture(e.pointerId);});
+        hitRect.addEventListener('pointermove',e=>{if(!dragStart||!selectMode)return;const p=point(e),x=Math.min(p.x,dragStart.x),y=Math.min(p.y,dragStart.y);selectionRect.setAttribute('x',x);selectionRect.setAttribute('y',y);selectionRect.setAttribute('width',Math.abs(p.x-dragStart.x));selectionRect.setAttribute('height',Math.abs(p.y-dragStart.y));});
+        hitRect.addEventListener('pointerup',e=>{if(!dragStart||!selectMode)return;const p=point(e),x=Math.min(p.x,dragStart.x),y=Math.min(p.y,dragStart.y),w=Math.abs(p.x-dragStart.x),h=Math.abs(p.y-dragStart.y);dragStart=null;selectMode=false;selectBtn.textContent='إعادة تحديد منطقة';const chosen=allRows.filter(r=>r.x<=x+w&&r.x+r.width>=x&&r.y<=y+h&&r.y+r.height>=y);csv='id,x,y,width,height\\n'+chosen.map(r=>[r.id,r.x,r.y,r.width,r.height].join(',')).join('\\n');selectionStatus.textContent='داخل المنطقة المحددة: '+chosen.length+' شكلًا. يمكنك نسخها لإرسالها دون بقية الأشكال.';copy.textContent='نسخ أشكال المنطقة المحددة (CSV)';copy.style.display=chosen.length?'block':'none';});
         csv='id,x,y,width,height\\n'+rows.map(r=>[r.id,r.x,r.y,r.width,r.height].join(',')).join('\\n');
-        copy.style.display='block';
+        copy.style.display='block';selectBtn.style.display='block';selectionStatus.textContent='اسحب بإصبعك مستطيلًا حول كلمة أَنْصَارٍ في المعاينة، ثم انسخ الأشكال التي تقع داخله.';
         status.textContent='تم استخراج '+rows.length+' شكلًا من المسار التاسع. الألوان والأرقام في المعاينة تشخيصية فقط وليست أحكام تجويد. الإحداثيات تقريبية لحدود كل مسار فرعي؛ وقد يحتوي الشكل على أكثر من جزء من الحرف.';
         this.textContent='إعادة التحليل الهندسي';
       }catch(e){status.textContent='تعذر التحليل: '+(e&&e.message?e.message:String(e));this.textContent='إعادة المحاولة';}
       this.disabled=false;
     });
+    selectBtn.addEventListener('click',()=>{if(!svgRef)return;selectMode=true;dragStart=null;selectionRect.style.display='none';selectionStatus.textContent='اسحب الآن مستطيلًا حول الكلمة في معاينة المصحف.';selectBtn.textContent='اسحب داخل المعاينة…';});
     copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(csv);copy.textContent='تم نسخ CSV';}catch(e){copy.textContent='تعذر النسخ؛ حاول مرة أخرى';}});
     return true;
   }
