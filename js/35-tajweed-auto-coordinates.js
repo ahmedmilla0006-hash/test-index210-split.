@@ -59,10 +59,13 @@
         root.setAttribute('width','345');root.setAttribute('height','550');
         root.style.cssText='position:absolute;left:-10000px;top:0;width:345px;height:550px;visibility:hidden';
         document.body.appendChild(root);
-        const source=paths[8],pathCTM=source.getCTM(),rootCTM=root.getScreenCTM();
-        if(!pathCTM||!rootCTM)throw new Error('تعذر حساب تحويل المسار');
-        // تحويل إحداثيات المسار إلى إحداثيات SVG الجذر، دون إزاحة موضع العنصر المخفي على الشاشة.
-        const matrix=rootCTM.inverse().multiply(pathCTM);
+        const source=paths[8];
+        // الطريقة التي نجحت سابقًا: getCTM() للمسار بعد إرفاق SVG الأصلي
+        // يعيد سلسلة التحويلات الموروثة من جميع مجموعات <g> حتى مساحة SVG.
+        // لا نطرح getScreenCTM للجذر؛ لأنه يخلط موضع SVG المخفي على الشاشة
+        // مع تحويلات الرسم، وقد ينتج إحداثيات خارج نطاق viewBox.
+        const matrix=source.getCTM();
+        if(!matrix)throw new Error('تعذر حساب سلسلة تحويلات المسار الموروثة');
         const probe=document.createElementNS(NS,'svg');
         probe.setAttribute('viewBox',root.getAttribute('viewBox')||'0 0 345 550');
         probe.setAttribute('width','345');probe.setAttribute('height','550');
