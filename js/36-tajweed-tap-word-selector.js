@@ -46,7 +46,11 @@
     function makeOverlay(items){
       overlay=document.createElementNS(NS,'g');overlay.setAttribute('id','atTapSelectionOverlay');overlay.setAttribute('pointer-events','none');
       // أجزاء path الفرعية في إحداثيات path الأصلية؛ نطبق تحويلها الكامل إلى SVG الجذر.
-      const matrix=source.getCTM();
+      // التحويل النسبي الصحيح من إحداثيات المسار إلى إحداثيات SVG الجذر.
+      // getCTM وحده يضع الإزاحة على أساس منفذ العرض، فينزاح التحديد أعلى/يمين الكلمة.
+      const rootScreen=svg.getScreenCTM();
+      const sourceScreen=source.getScreenCTM();
+      const matrix=rootScreen&&sourceScreen?rootScreen.inverse().multiply(sourceScreen):null;
       if(matrix)overlay.setAttribute('transform','matrix('+[matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f].join(' ')+')');
       svg.appendChild(overlay);
       overlay.style.cssText='display:inline;visibility:visible;opacity:1;pointer-events:none';
@@ -57,7 +61,7 @@
     function choose(clientX,clientY){
       if(!svg||!source||!shapes.length)return;
       // حدود الأجزاء حُسبت في إحداثيات parentNode؛ حوّل اللمسة إلى النظام نفسه.
-      const inv=source.getScreenCTM()?.inverse();if(!inv){status.textContent='تعذر حساب موضع اللمسة.';return;}
+      const inv=source.parentNode.getScreenCTM()?.inverse();if(!inv){status.textContent='تعذر حساب موضع اللمسة.';return;}
       const pt=new DOMPoint(clientX,clientY).matrixTransform(inv);
       let best=null,bestD=Infinity;
       shapes.forEach(s=>{
