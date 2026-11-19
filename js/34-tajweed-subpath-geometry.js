@@ -71,7 +71,7 @@
         const paths=[...doc.getElementsByTagNameNS(NS,'path')];if(paths.length!==9)throw new Error('عدد المسارات غير المتوقع: '+paths.length);
         const original=paths[8],parts=splitSubpaths(original.getAttribute('d')||'');
         const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',doc.documentElement.getAttribute('viewBox')||'0 0 345 550');svg.setAttribute('width','100%');svg.setAttribute('xmlns',NS);svg.style.maxWidth='500px';svg.style.height='auto';
-        const rows=[];
+        const rows=[];preview.appendChild(svg);
         parts.forEach((d,index)=>{
           const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','#222');p.setAttribute('stroke','none');svg.appendChild(p);
           const b=p.getBBox();rows.push({id:index+1,x:+b.x.toFixed(3),y:+b.y.toFixed(3),width:+b.width.toFixed(3),height:+b.height.toFixed(3)});
@@ -79,7 +79,7 @@
           const label=document.createElementNS(NS,'text');label.setAttribute('x',String(b.x+b.width/2));label.setAttribute('y',String(b.y+b.height/2));label.setAttribute('font-size','2.4');label.setAttribute('text-anchor','middle');label.setAttribute('fill','#111');label.textContent=String(index+1);svg.appendChild(label);
         });
         csv='id,x,y,width,height\\n'+rows.map(r=>[r.id,r.x,r.y,r.width,r.height].join(',')).join('\\n');
-        preview.appendChild(svg);copy.style.display='block';
+        copy.style.display='block';
         status.textContent='تم استخراج '+rows.length+' شكلًا من المسار التاسع. الألوان والأرقام في المعاينة تشخيصية فقط وليست أحكام تجويد. الإحداثيات تقريبية لحدود كل مسار فرعي؛ وقد يحتوي الشكل على أكثر من جزء من الحرف.';
         this.textContent='إعادة التحليل الهندسي';
       }catch(e){status.textContent='تعذر التحليل: '+(e&&e.message?e.message:String(e));this.textContent='إعادة المحاولة';}
