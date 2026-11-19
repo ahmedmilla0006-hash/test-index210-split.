@@ -6,7 +6,7 @@
   const NS='http://www.w3.org/2000/svg';
   const $=id=>document.getElementById(id);
   function splitPath(d){
-    const t=d.match(/[a-zA-Z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?\\d*)(?:[eE][-+]?\\d+)?/g)||[];
+    const t=d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g)||[];
     const ar={M:2,L:2,H:1,V:1,C:6,S:4,Q:4,T:2,A:7,Z:0};
     const out=[];let i=0,cmd=null,x=0,y=0,sx=0,sy=0,part=null;
     while(i<t.length){
