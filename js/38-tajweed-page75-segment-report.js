@@ -4,7 +4,7 @@
 const URL='https://www.mp3quran.net/api/quran_pages_svg/075.svg',NS='http://www.w3.org/2000/svg';
 const BOX={x1:171.5,y1:57.4,x2:202.5,y2:87.6};
 function split(d){
- const t=d.match(/[a-zA-Z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?\\d*)(?:[eE][-+]?\\d+)?/g)||[],ar={M:2,L:2,H:1,V:1,C:6,S:4,Q:4,T:2,A:7,Z:0};
+ const t=d.match(/[a-zA-Z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g)||[],ar={M:2,L:2,H:1,V:1,C:6,S:4,Q:4,T:2,A:7,Z:0};
  const out=[];let i=0,c=null,x=0,y=0,sx=0,sy=0,p=null;
  while(i<t.length){if(/^[a-zA-Z]$/.test(t[i]))c=t[i++];if(!c)break;const u=c.toUpperCase(),rel=c!==u,n=ar[u];if(n===undefined)break;if(!n){if(p)p.push('Z');x=sx;y=sy;c=null;continue;}if(i+n>t.length)break;const v=t.slice(i,i+n).map(Number),px=x,py=y;i+=n;
  if(u==='M'){const nx=rel?px+v[0]:v[0],ny=rel?py+v[1]:v[1];if(p)out.push(p.join(' '));p=['M',nx,ny];x=sx=nx;y=sy=ny;c=rel?'l':'L';}
