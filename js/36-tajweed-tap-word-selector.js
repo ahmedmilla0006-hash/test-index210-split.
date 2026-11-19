@@ -43,24 +43,21 @@
     const panel=$('atTapPanel'),status=$('atTapStatus'),host=$('atTapSvgHost'),result=$('atTapResult');
     let svg=null,source=null,parts=[],shapes=[],overlay=null,selected=[];
     function clearMarks(){if(overlay)overlay.remove();overlay=null;selected=[];result.textContent='';}
-    function makeOverlay(){
+    function makeOverlay(items){
       overlay=document.createElementNS(NS,'g');overlay.setAttribute('id','atTapSelectionOverlay');overlay.setAttribute('pointer-events','none');
-      // ارسم طبقة التحديد مباشرة تحت SVG الجذر، مع تطبيق مصفوفة CTM الكاملة
-      // للمسار الأصلي؛ وبذلك لا نفقد تحويلات المجموعات الأم أو تحويل المسار نفسه.
+      // أجزاء path الفرعية في إحداثيات path الأصلية؛ نطبق تحويلها الكامل إلى SVG الجذر.
       const matrix=source.getCTM();
       if(matrix)overlay.setAttribute('transform','matrix('+[matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f].join(' ')+')');
       svg.appendChild(overlay);
-      overlay.style.setProperty('display','inline');
-      overlay.style.setProperty('visibility','visible');
-      overlay.style.setProperty('opacity','1');
-      shapes.forEach(shape=>{
+      overlay.style.cssText='display:inline;visibility:visible;opacity:1;pointer-events:none';
+      items.forEach(shape=>{
         const p=document.createElementNS(NS,'path');p.setAttribute('d',parts[shape.i]);p.setAttribute('fill','#00a85a');p.setAttribute('fill-opacity','.9');p.setAttribute('stroke','#e00036');p.setAttribute('stroke-width','.7');p.setAttribute('vector-effect','non-scaling-stroke');overlay.appendChild(p);shape.mark=p;
       });
     }
     function choose(clientX,clientY){
       if(!svg||!source||!shapes.length)return;
       // حدود الأجزاء حُسبت في إحداثيات parentNode؛ حوّل اللمسة إلى النظام نفسه.
-      const inv=source.parentNode.getScreenCTM()?.inverse();if(!inv){status.textContent='تعذر حساب موضع اللمسة.';return;}
+      const inv=source.getScreenCTM()?.inverse();if(!inv){status.textContent='تعذر حساب موضع اللمسة.';return;}
       const pt=new DOMPoint(clientX,clientY).matrixTransform(inv);
       let best=null,bestD=Infinity;
       shapes.forEach(s=>{
@@ -71,7 +68,6 @@
       });
       if(!best||bestD>18){status.textContent='لم تُلتقط أشكال قريبة. المس وسط الكلمة مباشرة.';return;}
       clearMarks();
-      makeOverlay();
       const ax=best.b.x+best.b.width/2,ay=best.b.y+best.b.height/2;
       // جمع مكونات الحرف ونقاطه وحركاته القريبة من موضع اللمسة.
       selected=shapes.filter(s=>{
@@ -79,6 +75,7 @@
         return Math.abs(cx-ax)<=27 && Math.abs(cy-ay)<=17;
       });
       if(!selected.includes(best))selected.push(best);
+      makeOverlay(selected);
       selected.forEach(s=>s.mark?.setAttribute('fill','#00a85a'));
       selected.forEach(s=>s.mark?.setAttribute('fill-opacity','.9'));
       status.textContent='تم التقاط '+selected.length+' شكلًا قريبًا. راجع التحديد فوق الكلمة.';
@@ -100,9 +97,7 @@
           let b;try{b=p.getBBox();}catch(e){b=null;}p.remove();
           if(b&&Number.isFinite(b.x+b.y+b.width+b.height))shapes.push({i,b,mark:null});
         });
-        makeOverlay();
-        svg.addEventListener('click',e=>choose(e.clientX,e.clientY));
-        svg.addEventListener('touchend',e=>{if(e.changedTouches&&e.changedTouches[0]){const t=e.changedTouches[0];choose(t.clientX,t.clientY);}},{passive:true});
+        svg.addEventListener('pointerup',e=>{if(e.isPrimary)choose(e.clientX,e.clientY);});
         status.textContent='المعاينة جاهزة. المس كلمة «أَنْصَارٍ» مرة واحدة.';
       }catch(e){status.textContent='تعذر تجهيز المعاينة: '+(e.message||String(e))+' — قد يمنع الاتصال أو CORS تحميل SVG.';}
     }
