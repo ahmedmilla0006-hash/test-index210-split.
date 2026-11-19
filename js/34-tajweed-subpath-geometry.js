@@ -8,7 +8,7 @@
     // في هذا الملف ثبت أن أوامر بدء الأشكال الفرعية كلها m صغيرة.
     // نقسم عند أوامر m فقط، مع إبقاء بقية أوامر الرسم كما هي.
     const starts=[];
-    const re=/m(?=[\\s,+\\-\\d.])/g;
+    const re=/m(?=[\s,+\-\d.])/g;
     let match;
     while((match=re.exec(d))!==null) starts.push(match.index);
     const out=[];
