@@ -5,7 +5,7 @@
   const URL='https://www.mp3quran.net/api/quran_pages_svg/075.svg';
   const NS='http://www.w3.org/2000/svg';
   function split(d){
-    const t=d.match(/[a-zA-Z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?\\d*)(?:[eE][-+]?\\d+)?/g)||[];
+    const t=d.match(/[a-zA-Z]|[-+]?(?:\d*\\.\d+|\d+\\.?\d*)(?:[eE][-+]?\d+)?/g)||[];
     const ar={M:2,L:2,H:1,V:1,C:6,S:4,Q:4,T:2,A:7,Z:0};
     const out=[];let i=0,cmd=null,x=0,y=0,sx=0,sy=0,part=null;
     while(i<t.length){
@@ -66,7 +66,7 @@
         const probe=document.createElementNS(NS,'svg');
         probe.setAttribute('viewBox',root.getAttribute('viewBox')||'0 0 345 550');
         probe.setAttribute('width','345');probe.setAttribute('height','550');
-        probe.style.cssText='position:absolute;left:-10000px;top:0;overflow:visible';
+        probe.style.cssText='position:absolute;left:0;top:0;overflow:visible';
         document.body.appendChild(probe);
         const parts=split(source.getAttribute('d')||''),rows=[];
         const transform='matrix('+[matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f].join(' ')+')';
