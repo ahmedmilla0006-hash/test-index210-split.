@@ -45,10 +45,14 @@
     function clearMarks(){if(overlay)overlay.remove();overlay=null;selected=[];result.textContent='';}
     function makeOverlay(){
       overlay=document.createElementNS(NS,'g');overlay.setAttribute('id','atTapSelectionOverlay');overlay.setAttribute('pointer-events','none');
-      // أجزاء المسار المفككة يجب أن ترث تحويلات المسار الأصلي حتى تتطابق مع مواضع الحروف.
-      const transform=source.getAttribute('transform');
-      if(transform)overlay.setAttribute('transform',transform);
-      source.parentNode.appendChild(overlay);
+      // ارسم طبقة التحديد مباشرة تحت SVG الجذر، مع تطبيق مصفوفة CTM الكاملة
+      // للمسار الأصلي؛ وبذلك لا نفقد تحويلات المجموعات الأم أو تحويل المسار نفسه.
+      const matrix=source.getCTM();
+      if(matrix)overlay.setAttribute('transform','matrix('+[matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f].join(' ')+')');
+      svg.appendChild(overlay);
+      overlay.style.setProperty('display','inline');
+      overlay.style.setProperty('visibility','visible');
+      overlay.style.setProperty('opacity','1');
       shapes.forEach(shape=>{
         const p=document.createElementNS(NS,'path');p.setAttribute('d',parts[shape.i]);p.setAttribute('fill','#00a85a');p.setAttribute('fill-opacity','.9');p.setAttribute('stroke','#e00036');p.setAttribute('stroke-width','.7');p.setAttribute('vector-effect','non-scaling-stroke');overlay.appendChild(p);shape.mark=p;
       });
