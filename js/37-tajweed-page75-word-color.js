@@ -63,6 +63,8 @@
       const paths=[...measureRoot.querySelectorAll('path')];
       if(paths.length!==9){measureRoot.remove();throw new Error('Unexpected SVG paths');}
       const source=paths[8], parent=source.parentNode;
+      const sourceMatrix=source.getCTM();
+      if(!sourceMatrix)throw new Error('Cannot resolve source SVG transform');
       const parts=splitPath(source.getAttribute('d')||'');
       const picked=[];
       try{
@@ -80,16 +82,14 @@
       svg.setAttribute('viewBox',vb);svg.setAttribute('preserveAspectRatio',root.getAttribute('preserveAspectRatio')||'xMidYMid meet');
       svg.setAttribute('aria-label','تلوين كلمة أَنْصَارٍ — إخفاء حقيقي');
       svg.style.cssText='position:fixed;z-index:40;pointer-events:none;overflow:visible;display:block';
-      /* اخفِ محتوى نسخة المعاينة، وأبقِ مسارات الكلمة المختارة فقط. */
-      const chain=[];for(let n=parent;n&&n!==root;n=n.parentNode)chain.unshift(n);
-      let target=svg;
-      chain.forEach(n=>{
-        const g=document.createElementNS(NS,'g');
-        const tr=n.getAttribute&&n.getAttribute('transform');if(tr)g.setAttribute('transform',tr);
-        target.appendChild(g);target=g;
-      });
-      const sourceTransform=source.getAttribute('transform');
-      if(sourceTransform){const g=document.createElementNS(NS,'g');g.setAttribute('transform',sourceTransform);target.appendChild(g);target=g;}
+      /* استخدم مصفوفة التحويل الفعلية للمسار إلى جذر SVG؛
+         هذا يحافظ على جميع التحويلات المتداخلة كما في أداة التحديد التي راجعها المستخدم. */
+      const target=document.createElementNS(NS,'g');
+      target.setAttribute('transform','matrix('+[
+        sourceMatrix.a,sourceMatrix.b,sourceMatrix.c,
+        sourceMatrix.d,sourceMatrix.e,sourceMatrix.f
+      ].join(' ')+')');
+      svg.appendChild(target);
       picked.forEach(d=>{
         const p=document.createElementNS(NS,'path');p.setAttribute('d',d);
         p.setAttribute('fill',COLOR);p.setAttribute('fill-opacity','1');p.setAttribute('stroke','none');
