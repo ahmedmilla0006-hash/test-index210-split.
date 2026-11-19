@@ -5,18 +5,44 @@
   const SVG_URL='https://www.mp3quran.net/api/quran_pages_svg/075.svg';
   const NS='http://www.w3.org/2000/svg';
   function splitSubpaths(d){
-    // في هذا الملف ثبت أن أوامر بدء الأشكال الفرعية كلها m صغيرة.
-    // نقسم عند أوامر m فقط، مع إبقاء بقية أوامر الرسم كما هي.
-    const starts=[];
-    const re=/m(?=[\s,+\-\d.])/g;
-    let match;
-    while((match=re.exec(d))!==null) starts.push(match.index);
-    const out=[];
-    for(let i=0;i<starts.length;i++){
-      const segment=d.slice(starts[i],i+1<starts.length?starts[i+1]:d.length).trim();
-      if(segment) out.push(segment);
+    // تتبع نقطة الرسم الحالية وفق أوامر SVG، ثم تحويل كل m نسبية إلى M مطلقة.
+    const tokens=d.match(/[a-zA-Z]|[-+]?(?:\d*\.?\d+)(?:[eE][-+]?\d+)?/g)||[];
+    const counts={M:2,L:2,H:1,V:1,C:6,S:4,Q:4,T:2,A:7,Z:0};
+    const parts=[];
+    let x=0,y=0,sx=0,sy=0,cmd=null,i=0,current=null;
+    while(i<tokens.length){
+      if(/^[a-zA-Z]$/.test(tokens[i])) cmd=tokens[i++];
+      if(!cmd) break;
+      const upper=cmd.toUpperCase(),rel=cmd!==upper,n=counts[upper];
+      if(n===undefined) break;
+      if(n===0){
+        if(current) current.tokens.push('Z');
+        x=sx;y=sy;cmd=null;continue;
+      }
+      if(i+n>tokens.length) break;
+      const vals=[];
+      for(let k=0;k<n;k++) vals.push(Number(tokens[i++]));
+      const px=x,py=y;
+      if(upper==='M'){
+        const nx=rel?px+vals[0]:vals[0],ny=rel?py+vals[1]:vals[1];
+        if(current) parts.push(current.tokens.join(' '));
+        current={tokens:['M',String(nx),String(ny)]};
+        x=nx;y=ny;sx=x;sy=y;
+        if(i<tokens.length&&!/^[a-zA-Z]$/.test(tokens[i])) cmd=rel?'l':'L';
+      }else{
+        if(!current) current={tokens:[]};
+        current.tokens.push(cmd,...vals.map(String));
+        if(upper==='L'||upper==='T'){x=rel?px+vals[0]:vals[0];y=rel?py+vals[1]:vals[1];}
+        else if(upper==='H') x=rel?px+vals[0]:vals[0];
+        else if(upper==='V') y=rel?py+vals[0]:vals[0];
+        else if(upper==='C'||upper==='S'||upper==='Q'||upper==='A'){
+          const ex=vals[vals.length-2],ey=vals[vals.length-1];
+          x=rel?px+ex:ex;y=rel?py+ey:ey;
+        }
+      }
     }
-    return out;
+    if(current) parts.push(current.tokens.join(' '));
+    return parts.filter(Boolean);
   }
   function addUI(){
     const box=document.querySelector('#ayaTajweedOverlay .at-box');
