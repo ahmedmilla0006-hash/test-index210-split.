@@ -59,15 +59,37 @@
         const res=await fetch(SVG_URL,{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
         const doc=new DOMParser().parseFromString(await res.text(),'image/svg+xml');
         const paths=[...doc.getElementsByTagNameNS(NS,'path')];if(paths.length!==9)throw new Error('عدد المسارات غير المتوقع: '+paths.length);
-        const original=paths[8],parts=splitSubpaths(original.getAttribute('d')||'');
-        const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',doc.documentElement.getAttribute('viewBox')||'0 0 345 550');svg.setAttribute('width','100%');svg.setAttribute('xmlns',NS);svg.style.maxWidth='500px';svg.style.height='auto';
-        const rows=[];preview.appendChild(svg);
+        const viewBox=doc.documentElement.getAttribute('viewBox')||'0 0 345 550';
+        // Mount the original SVG invisibly so getCTM() includes every ancestor transform.
+        const sourceRoot=doc.documentElement;
+        sourceRoot.setAttribute('width','345');sourceRoot.setAttribute('height','550');
+        sourceRoot.style.cssText='position:absolute;left:-10000px;top:0;width:345px;height:550px;visibility:hidden';
+        document.body.appendChild(sourceRoot);
+        const original=[...sourceRoot.getElementsByTagNameNS(NS,'path')][8];
+        const matrix=original.getCTM();
+        if(!matrix) throw new Error('تعذر قراءة تحويلات SVG الأصلية');
+        const svg=document.createElementNS(NS,'svg');
+        svg.setAttribute('viewBox',viewBox);svg.setAttribute('width','100%');svg.setAttribute('xmlns',NS);
+        svg.style.maxWidth='500px';svg.style.height='auto';preview.appendChild(svg);
+        const parts=splitSubpaths(original.getAttribute('d')||'');
+        const matrixText='matrix('+[matrix.a,matrix.b,matrix.c,matrix.d,matrix.e,matrix.f].join(' ')+')';
+        const rows=[];
         parts.forEach((d,index)=>{
-          const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','#222');p.setAttribute('stroke','none');svg.appendChild(p);
-          const b=p.getBBox();rows.push({id:index+1,x:+b.x.toFixed(3),y:+b.y.toFixed(3),width:+b.width.toFixed(3),height:+b.height.toFixed(3)});
-          p.setAttribute('fill','hsl('+((index*47)%360)+' 70% 48%)');p.setAttribute('fill-opacity','.82');p.setAttribute('stroke','#222');p.setAttribute('stroke-width','.22');
-          const label=document.createElementNS(NS,'text');label.setAttribute('x',String(b.x+b.width/2));label.setAttribute('y',String(b.y+b.height/2));label.setAttribute('font-size','2.4');label.setAttribute('text-anchor','middle');label.setAttribute('fill','#111');label.textContent=String(index+1);svg.appendChild(label);
+          const group=document.createElementNS(NS,'g');group.setAttribute('transform',matrixText);svg.appendChild(group);
+          const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','hsl('+((index*47)%360)+' 70% 48%)');p.setAttribute('fill-opacity','.82');p.setAttribute('stroke','#222');p.setAttribute('stroke-width','.22');group.appendChild(p);
+          const rect=p.getBoundingClientRect(),inv=svg.getScreenCTM().inverse();
+          const corners=[
+            new DOMPoint(rect.left,rect.top).matrixTransform(inv),
+            new DOMPoint(rect.right,rect.top).matrixTransform(inv),
+            new DOMPoint(rect.right,rect.bottom).matrixTransform(inv),
+            new DOMPoint(rect.left,rect.bottom).matrixTransform(inv)
+          ];
+          const xs=corners.map(q=>q.x),ys=corners.map(q=>q.y);
+          const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+          rows.push({id:index+1,x:+x.toFixed(3),y:+y.toFixed(3),width:+w.toFixed(3),height:+h.toFixed(3)});
+          const label=document.createElementNS(NS,'text');label.setAttribute('x',String(x+w/2));label.setAttribute('y',String(y+h/2));label.setAttribute('font-size','2.4');label.setAttribute('text-anchor','middle');label.setAttribute('fill','#111');label.textContent=String(index+1);svg.appendChild(label);
         });
+        sourceRoot.remove();
         csv='id,x,y,width,height\\n'+rows.map(r=>[r.id,r.x,r.y,r.width,r.height].join(',')).join('\\n');
         copy.style.display='block';
         status.textContent='تم استخراج '+rows.length+' شكلًا من المسار التاسع. الألوان والأرقام في المعاينة تشخيصية فقط وليست أحكام تجويد. الإحداثيات تقريبية لحدود كل مسار فرعي؛ وقد يحتوي الشكل على أكثر من جزء من الحرف.';
