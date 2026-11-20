@@ -40,6 +40,7 @@
   let wordTimings=[];
   let wordFrame=0;
   let activeWordKey="";
+  let activeVerseKey="";
   let wordSurah=0;
   let originalAudioUrl="";
   let wordAudioUrl="";
@@ -49,22 +50,36 @@
     host.querySelectorAll("g.word.aya-word-active").forEach(el=>el.classList.remove("aya-word-active"));
     activeWordKey="";
   }
+  function clearVerse(){
+    host.querySelectorAll("g.word.aya-verse-active").forEach(el=>el.classList.remove("aya-verse-active"));
+    activeVerseKey="";
+    clearWord();
+  }
   function paintWord(){
     if(!enabled||!audioEl||audioEl.paused||!wordTimings.length) return;
     const ms=audioEl.currentTime*1000;
     let found=null;
+    let foundVerse="";
     outer: for(const verse of wordTimings){
       for(const seg of (verse.segments||[])){
         if(ms>=Number(seg[1])&&ms<Number(seg[2])){
-          found=String(verse.verse_key)+":"+String(seg[0]); break outer;
+          foundVerse=String(verse.verse_key);
+          found=foundVerse+":"+String(seg[0]);
+          break outer;
         }
       }
     }
-    if(found===activeWordKey) return;
-    clearWord();
-    if(found){
-      const el=host.querySelector('g.word[data-word-key="'+found+'"]');
-      if(el){el.classList.add("aya-word-active");activeWordKey=found;}
+    if(foundVerse&&foundVerse!==activeVerseKey){
+      clearVerse();
+      activeVerseKey=foundVerse;
+      host.querySelectorAll('g.word[data-word-key^="'+foundVerse+':"]').forEach(el=>el.classList.add("aya-verse-active"));
+    }
+    if(found!==activeWordKey){
+      clearWord();
+      if(found){
+        const el=host.querySelector('g.word[data-word-key="'+found+'"]');
+        if(el){el.classList.add("aya-word-active");activeWordKey=found;}
+      }
     }
   }
   function startWordFrame(){
@@ -103,6 +118,7 @@
       }
       wordTimings=list;
       wordSurah=surah;
+      clearVerse();
       wordAudioUrl=af.audio_url;
       originalAudioUrl=String(audioEl.currentSrc||audioEl.src||"");
       audioWasPlaying=!audioEl.paused;
@@ -129,7 +145,7 @@
     audioEl.pause();
     if(url){audioEl.src=url;audioEl.load();if(wasPlaying)audioEl.play().catch(()=>{});}
     wordTimings=[];wordSurah=0;wordAudioUrl="";originalAudioUrl="";
-    clearWord();
+    clearVerse();
     if(wordFrame) cancelAnimationFrame(wordFrame);
     wordFrame=0;
   }
