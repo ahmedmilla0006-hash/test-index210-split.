@@ -870,6 +870,17 @@ function seekToAyahItem(item, options = {}){
 
   const autoPlay = options.autoPlay !== false;
 
+  /* في مصحف المدينة: الصوت وتوقيت الكلمات من Quran.com مع إبقاء تحكمات آية. */
+  if(window.__ayaMadinahAudioBridge&&window.__ayaMadinahAudioBridge.isEnabled()){
+    currentAudioSurah=targetSurah;
+    window.__ayaMadinahAudioBridge.changeReader({
+      surah:targetSurah,
+      ayah:Number(item.ayah)||null,
+      play:autoPlay
+    });
+    return true;
+  }
+
   if(typeof resetRepeat === "function") resetRepeat();
 
   const applySeekAndPlay = ()=>{
@@ -2666,6 +2677,20 @@ function seekMsForPageStart(list, pageNum, surahNum){
 
 function updateAudioSource(keepPosition = false, options = {}){
 
+  /* امنع مسارات آية المعتادة من استبدال تسجيل مصحف المدينة بتسجيل MP3Quran. */
+  if(window.__ayaMadinahAudioBridge&&window.__ayaMadinahAudioBridge.isEnabled()){
+    const bridgeSurah=Number(options.surahNumber||currentAudioSurah||getSurahNumberForPage(currentPage))||1;
+    const bridgePlay=!!(!audio.paused||(typeof userWantsPlay!=="undefined"&&userWantsPlay)||options.autoContinue);
+    const bridgeAyah=Number(options.startAyah)||null;
+    window.__ayaMadinahAudioBridge.updateSource({
+      surah:bridgeSurah,
+      ayah:bridgeAyah,
+      play:bridgePlay,
+      keepPosition:!!keepPosition
+    });
+    return;
+  }
+
   const oldTime = audio.currentTime || 0;
   const wasPlaying =
     !audio.paused ||
@@ -3154,6 +3179,22 @@ readerSelect.onchange = ()=>{
 
   updateReaderName();
   currentAudioSurah = targetSurah;
+
+  /* في مصحف المدينة: غيّر الصوت والتوقيت معًا، ولا تسمح لمسار MP3Quran بالتدخل. */
+  if(window.__ayaMadinahAudioBridge&&window.__ayaMadinahAudioBridge.isEnabled()){
+    resetRepeat();
+    try{
+      if(typeof refreshTimeDisplay==="function")refreshTimeDisplay({resetCurrent:true,forceZeroDuration:true});
+      if(typeof clearAyahHighlight==="function")clearAyahHighlight();
+      if(wasPlaying&&typeof userWantsPlay!=="undefined")userWantsPlay=true;
+    }catch(e){}
+    window.__ayaMadinahAudioBridge.changeReader({
+      surah:targetSurah,
+      ayah:targetAyah,
+      play:wasPlaying
+    });
+    return;
+  }
 
   /* حمّل صوت القارئ الجديد ثم ابحث عن نفس الآية في توقيته */
   const url = getAudioUrl(selectedReader, currentPage, currentAudioSurah);
