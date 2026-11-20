@@ -3143,30 +3143,36 @@ readerSelect.onchange = ()=>{
     currentAudioSurah ||
     getSurahNumberForPage(currentPage)
   );
-  if(typeof getActiveTiming === "function"){
-    const active = getActiveTiming();
-    if(active && active.ayah != null){
-      targetAyah = Number(active.ayah);
-      if(active._surah) targetSurah = Number(active._surah);
-    }
-  }
-  /* إن لم نجد آية نشطة (مثلاً عند الإيقاف) نأخذ أقرب آية حسب الوقت */
-  if(targetAyah == null && currentTiming && currentTiming.length && audio){
-    const t = (audio.currentTime || 0) * 1000;
-    let nearest = null;
-    let nearestDist = Infinity;
-    for(const item of currentTiming){
-      const st = Number(item.start_time);
-      if(!Number.isFinite(st)) continue;
-      const d = Math.abs(t - st);
-      if(d < nearestDist){
-        nearestDist = d;
-        nearest = item;
+  const madinahBridge=window.__ayaMadinahAudioBridge&&window.__ayaMadinahAudioBridge.isEnabled()
+    ? window.__ayaMadinahAudioBridge : null;
+  if(madinahBridge){
+    targetAyah=Number(madinahBridge.getCurrentAyah())||null;
+  }else{
+    if(typeof getActiveTiming === "function"){
+      const active = getActiveTiming();
+      if(active && active.ayah != null){
+        targetAyah = Number(active.ayah);
+        if(active._surah) targetSurah = Number(active._surah);
       }
     }
-    if(nearest && nearest.ayah != null){
-      targetAyah = Number(nearest.ayah);
-      if(nearest._surah) targetSurah = Number(nearest._surah);
+    /* إن لم نجد آية نشطة نأخذ أقرب آية حسب توقيت آية الأصلي. */
+    if(targetAyah == null && currentTiming && currentTiming.length && audio){
+      const t = (audio.currentTime || 0) * 1000;
+      let nearest = null;
+      let nearestDist = Infinity;
+      for(const item of currentTiming){
+        const st = Number(item.start_time);
+        if(!Number.isFinite(st)) continue;
+        const d = Math.abs(t - st);
+        if(d < nearestDist){
+          nearestDist = d;
+          nearest = item;
+        }
+      }
+      if(nearest && nearest.ayah != null){
+        targetAyah = Number(nearest.ayah);
+        if(nearest._surah) targetSurah = Number(nearest._surah);
+      }
     }
   }
 
