@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اختبار توقيت كلمات الفاتحة – آية</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f5f5f5;color:#222;margin:0;padding:16px}
+main{max-width:900px;margin:auto;background:white;padding:18px;border-radius:14px}
+h2{margin-top:0}button{padding:12px 18px;border:0;border-radius:9px;background:#176b45;color:white;font-size:16px}
+.status{padding:12px;border-radius:9px;background:#eee;margin:12px 0;white-space:pre-wrap}
+#page{overflow:auto;text-align:center;margin:16px 0}#page svg{max-width:100%;height:auto}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:#111;color:#d7f7d7;padding:12px;border-radius:9px;font-size:12px;max-height:55vh;overflow:auto}
+.small{color:#666;font-size:13px}
+</style></head>
+<body><main>
+<h2>اختبار توقيت كلمات الفاتحة – أبو بكر الشاطري</h2>
+<p>هذا اختبار مستقل. يطلب توقيتات الكلمات مباشرة من Quran.com، ولا يغيّر أي ملف في التطبيق.</p>
+<button id="run">اختبار التوقيتات الآن</button>
+<div id="status" class="status">لم يبدأ الاختبار بعد.</div>
+<div id="page">جارٍ تحميل صفحة المصحف…</div>
+<h3>بيانات الاستجابة الخام</h3><pre id="raw">ستظهر هنا نتيجة الطلب.</pre>
+<p class="small">القارئ: أبو بكر الشاطري — Quran.com recitation ID: 4 — السورة: الفاتحة (1)</p>
+</main>
+<script>
+const statusEl=document.getElementById('status'),rawEl=document.getElementById('raw');
+(async()=>{
+ try{
+  const r=await fetch('https://cdn.quran.ws/svg/elements/v1.1.1/pages/001.svg');
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  document.getElementById('page').innerHTML=await r.text();
+ }catch(e){document.getElementById('page').textContent='تعذر تحميل صفحة المصحف: '+e.message}
+})();
+document.getElementById('run').addEventListener('click',async()=>{
+ const url='https://api.quran.com/api/v4/chapter_recitations/4/1?segments=true';
+ statusEl.textContent='جارٍ الاتصال بواجهة Quran.com…';
+ rawEl.textContent='انتظر…';
+ try{
+  const response=await fetch(url,{headers:{'Accept':'application/json'}});
+  const body=await response.text();
+  let data;try{data=JSON.parse(body)}catch{data=null}
+  if(!response.ok){statusEl.textContent='فشل الطلب: HTTP '+response.status;rawEl.textContent=body;return}
+  if(!data){statusEl.textContent='وصل رد، لكنه ليس JSON صالحًا.';rawEl.textContent=body;return}
+  const audio=data.audio_file||{};
+  const rows=Array.isArray(audio.timestamps)?audio.timestamps:[];
+  let verseCount=rows.length, segmentCount=0, sample=[];
+  for(const row of rows){const seg=row.segments||row.words||[];segmentCount+=Array.isArray(seg)?seg.length:0;if(sample.length<3)sample.push(row)}
+  statusEl.textContent='نجح الاتصال. HTTP '+response.status+
+   '\nوجد audio_file: '+!!data.audio_file+
+   '\nرابط الصوت: '+(audio.audio_url||audio.url||'غير ظاهر')+
+   '\nعدد سجلات التوقيت: '+verseCount+
+   '\nعدد المقاطع داخلها (حسب الحقول المعروفة): '+segmentCount+
+   '\nتم عرض الاستجابة كاملة أدناه لفحص بنية توقيت الكلمات.';
+  rawEl.textContent=JSON.stringify(data,null,2);
+ }catch(e){
+  statusEl.textContent='تعذر إكمال الطلب من المتصفح: '+e.name+' — '+e.message+
+   '\nقد يكون السبب حظر CORS أو انقطاع الاتصال؛ هذا لا يثبت عدم وجود التوقيتات.';
+  rawEl.textContent=String(e);
+ }
+});
+</script></body></html>
