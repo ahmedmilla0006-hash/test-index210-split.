@@ -57,7 +57,7 @@
   }
   /* استخدم تظليل الآية الأصلي في آية، مع إبقاء تلوين الكلمة الحالية فقط */
   function showAyaVerseHighlight(verseKey){
-    const match=String(verseKey||"").match(/^(\\d+):(\\d+)$/);
+    const match=String(verseKey||"").match(/^(\d+):(\d+)$/);
     if(!match||typeof drawAyahHighlight!=="function") return;
     const surah=Number(match[1]), ayah=Number(match[2]);
     const list=Array.isArray(currentTiming)?currentTiming:[];
