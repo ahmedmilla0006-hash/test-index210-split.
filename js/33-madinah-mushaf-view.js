@@ -96,12 +96,6 @@
       return Number(currentAudioSurah)||Number(getSurahNumberForPage(currentPageNumber()))||1;
     }catch(e){return 1;}
   }
-  window.__ayaMadinahKeepAudioForPage=function(targetPage){
-    if(!enabled||!audioEl||!wordTimings.length||!wordAudioUrl) return false;
-    try{
-      return Number(getSurahNumberForPage(Number(targetPage)))===Number(wordSurah);
-    }catch(e){return false;}
-  };
   async function loadWordRecitation(force){
     if(!enabled||!audioEl||wordLoading) return;
     const surah=activeSurah();
