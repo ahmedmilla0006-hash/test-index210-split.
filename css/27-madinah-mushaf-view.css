@@ -19,7 +19,6 @@
   direction:rtl;
 }
 body.aya-madinah-mode #quranPage{visibility:hidden!important}
-body.aya-madinah-mode #ayahHighlightLayer{display:none!important}
 body.aya-madinah-mode .madinah-mushaf-host{display:flex}
 .madinah-mushaf-toggle{
   position:absolute;
@@ -54,16 +53,7 @@ body.aya-madinah-mode .madinah-mushaf-host{display:flex}
 body.aya-madinah-mode .madinah-mushaf-status:not(:empty){display:block}
 .night-mode body.aya-madinah-mode .madinah-mushaf-host svg{background:#fff}
 
-/* الآية الحالية كاملة بالأخضر، والكلمة المنطوقة حاليًا بالأزرق */
-.madinah-mushaf-host g.word.aya-verse-active path{
-  fill:#168443!important;
-}
-.madinah-mushaf-host g.word.aya-verse-active{
-  
-}
+/* تظليل الآية يتم عبر طبقة التظليل الأصلية في آية؛ الأزرق للكلمة الحالية فقط */
 .madinah-mushaf-host g.word.aya-word-active path{
   fill:#2f80ed!important;
-}
-.madinah-mushaf-host g.word.aya-word-active{
-  
 }
