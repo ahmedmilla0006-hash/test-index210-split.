@@ -53,27 +53,6 @@
   function clearVerse(){
     activeVerseKey="";
     clearWord();
-    if(typeof clearAyahHighlight==="function") clearAyahHighlight();
-  }
-  /* استخدم تظليل الآية الأصلي في آية، مع إبقاء تلوين الكلمة الحالية فقط */
-  function showAyaVerseHighlight(verseKey){
-    const match=String(verseKey||"").match(/^(\d+):(\d+)$/);
-    if(!match||typeof drawAyahHighlight!=="function") return;
-    const surah=Number(match[1]), ayah=Number(match[2]);
-    const list=Array.isArray(currentTiming)?currentTiming:[];
-    const item=list.find(x=>Number(x&&x.ayah)===ayah&&
-      Number(x&&x._surah||timingSurahLoaded||surah)===surah&&
-      x&&x.polygon);
-    if(!item) return;
-    const previousMode=highlightMode;
-    try{
-      highlightMode="ayah-highlight";
-      drawAyahHighlight(item);
-    }catch(error){
-      console.warn("[Aya Madinah ayah highlight]",error);
-    }finally{
-      highlightMode=previousMode;
-    }
   }
   function paintWord(){
     if(!enabled||!audioEl||!wordTimings.length) return;
@@ -90,9 +69,8 @@
       }
     }
     if(foundVerse&&foundVerse!==activeVerseKey){
-      clearVerse();
+      clearWord();
       activeVerseKey=foundVerse;
-      showAyaVerseHighlight(foundVerse);
     }
     if(found!==activeWordKey){
       clearWord();
@@ -147,6 +125,7 @@
       originalAudioUrl=String(audioEl.currentSrc||audioEl.src||"");
       audioWasPlaying=!audioEl.paused;
       audioEl.pause();
+      audioEl.__ayaMadinahWordAudio=true;
       audioEl.src=wordAudioUrl;
       audioEl.load();
       audioEl.currentTime=0;
@@ -170,6 +149,7 @@
     if(!url) url=originalAudioUrl;
     audioEl.pause();
     if(url){audioEl.src=url;audioEl.load();if(wasPlaying)audioEl.play().catch(()=>{});}
+    audioEl.__ayaMadinahWordAudio=false;
     wordTimings=[];wordSurah=0;wordAudioUrl="";originalAudioUrl="";
     clearVerse();
     if(wordFrame) cancelAnimationFrame(wordFrame);
@@ -217,7 +197,7 @@
       const svg=document.importNode(source,true);
       host.replaceChildren(svg);
       host.dataset.page=String(pageNo);
-      /* أعد رسم تظليل الآية على الصفحة الجديدة، ولا تلوّن الآية كاملة */
+      /* أزل أي أثر سابق؛ التلوين الأزرق للكلمة الحالية فقط */
       clearVerse();
       if(wordTimings.length) paintWord();
       if(!wordLoading) status.textContent="";
