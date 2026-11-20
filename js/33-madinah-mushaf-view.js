@@ -196,7 +196,10 @@
     });
   }
   const observer=new MutationObserver(()=>{
-    if(enabled) renderPage(currentPageNumber());
+    if(enabled){
+      renderPage(currentPageNumber());
+      if(wordSurah&&activeSurah()!==wordSurah) loadWordRecitation(true);
+    }
   });
   observer.observe(pageImage,{attributes:true,attributeFilter:["src"]});
   window.addEventListener("pageshow",()=>{if(enabled)renderPage(currentPageNumber());});
