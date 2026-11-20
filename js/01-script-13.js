@@ -108,7 +108,6 @@ let currentAudioSurah = null;
 
 function loadPage(n, options = {}){
 
-  const previousPage = currentPage;
   currentPage =
     Math.max(
       1,
@@ -131,17 +130,6 @@ function loadPage(n, options = {}){
   /* تجهيز مسبق لتوقيت كل سور الصفحة (يُسرّع الضغط المطوّل لاحقاً) */
   if(typeof loadPageHitTiming === "function"){
     loadPageHitTiming(currentPage);
-  }
-
-  // في وضع مصحف المدينة، حافظ على تسجيل Quran.com وتوقيتات الكلمات
-  // عند الانتقال بين صفحات السورة نفسها.
-  if(
-    !options.keepAudio &&
-    localStorage.getItem("ayaMadinahMushaf") === "1" &&
-    typeof window.__ayaMadinahKeepAudioForPage === "function" &&
-    window.__ayaMadinahKeepAudioForPage(currentPage, previousPage)
-  ){
-    options.keepAudio = true;
   }
 
   // عندما تكون الصفحة التالية داخل نفس مسار التلاوة،
