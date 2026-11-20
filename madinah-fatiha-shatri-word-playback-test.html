@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>اختبار التلاوة وتلوين كلمات الفاتحة</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f4f4f4;color:#222;margin:0;padding:14px}
+main{max-width:900px;margin:auto;background:#fff;padding:16px;border-radius:14px}
+button{padding:11px 16px;border:0;border-radius:9px;background:#176b45;color:white;font-size:16px;margin:4px}
+#status{background:#eee;padding:12px;border-radius:9px;white-space:pre-wrap;margin:12px 0}
+#page{overflow:auto;text-align:center;margin-top:14px}
+#page svg{max-width:100%;height:auto}
+#page g.word.active path{fill:#e09a16!important}
+#page g.word.active{filter:drop-shadow(0 0 1px #e09a16)}
+.small{font-size:13px;color:#666}
+</style></head>
+<body><main>
+<h2>اختبار التلاوة وتلوين كلمات الفاتحة</h2>
+<p>صفحة اختبار مستقلة: تشغيل تسجيل أبي بكر الشاطري مع تلوين الكلمة بحسب توقيتها الفعلي.</p>
+<button id="play" disabled>▶ تشغيل التلاوة</button>
+<button id="pause" disabled>إيقاف مؤقت</button>
+<button id="reset" disabled>إعادة من البداية</button>
+<div id="status">جارٍ تحميل صفحة المصحف وتوقيتات الكلمات…</div>
+<audio id="audio" preload="auto"></audio>
+<div id="page">تحميل المصحف…</div>
+<p class="small">لا يغيّر هذا الاختبار ملفات التطبيق. التوقيتات من Quran.com والتسجيل هو التسجيل المرتبط بها.</p>
+</main>
+<script>
+const API='https://api.quran.com/api/v4/chapter_recitations/4/1?segments=true';
+const SVG='https://cdn.quran.ws/svg/elements/v1.1.1/pages/001.svg';
+const audio=document.getElementById('audio'),status=document.getElementById('status');
+let timings=[],ready=false,lastKey='';
+function clearActive(){document.querySelectorAll('#page g.word.active').forEach(x=>x.classList.remove('active'))}
+function tick(){
+ if(!ready||audio.paused)return;
+ const ms=audio.currentTime*1000;
+ let found=null;
+ for(const verse of timings){
+  for(const seg of (verse.segments||[])){
+   if(ms>=seg[1] && ms<seg[2]){found={key:verse.verse_key+':'+seg[0],from:seg[1],to:seg[2]};break}
+  }
+  if(found)break;
+ }
+ const key=found?found.key:'';
+ if(key!==lastKey){
+  clearActive();lastKey=key;
+  if(key){
+   const el=document.querySelector('#page g.word[data-word-key="'+key+'"]');
+   if(el)el.classList.add('active');
+   else status.textContent='التلاوة تعمل، لكن لم أجد مجموعة الكلمة في SVG: '+key+'\nسنراجع اختلاف ترقيم الكلمات.';
+  }
+ }
+ requestAnimationFrame(tick);
+}
+(async()=>{
+ try{
+  const [sr,ar]=await Promise.all([fetch(SVG),fetch(API,{headers:{Accept:'application/json'}})]);
+  if(!sr.ok)throw new Error('تعذر تحميل SVG: HTTP '+sr.status);
+  if(!ar.ok)throw new Error('تعذر تحميل التوقيتات: HTTP '+ar.status);
+  const svg=await sr.text(),data=await ar.json();
+  document.getElementById('page').innerHTML=svg;
+  const af=data.audio_file||{};
+  timings=af.timestamps||[];
+  if(!af.audio_url||timings.length!==7)throw new Error('استجابة التوقيتات غير مكتملة.');
+  audio.src=af.audio_url;
+  ready=true;
+  document.getElementById('play').disabled=false;
+  document.getElementById('pause').disabled=false;
+  document.getElementById('reset').disabled=false;
+  status.textContent='جاهز: 7 آيات و29 مقطع كلمة. اضغط تشغيل لاختبار التزامن.';
+  audio.addEventListener('play',()=>{lastKey='';requestAnimationFrame(tick)});
+  audio.addEventListener('ended',()=>{clearActive();lastKey='';status.textContent='انتهت التلاوة. اكتمل اختبار الفاتحة.'});
+ }catch(e){status.textContent='تعذر تجهيز الاختبار: '+e.message}
+})();
+document.getElementById('play').onclick=()=>audio.play().catch(e=>status.textContent='تعذر تشغيل الصوت: '+e.message);
+document.getElementById('pause').onclick=()=>audio.pause();
+document.getElementById('reset').onclick=()=>{audio.pause();audio.currentTime=0;clearActive();lastKey='';status.textContent='عاد التسجيل إلى البداية. اضغط تشغيل.'};
+</script></body></html>
