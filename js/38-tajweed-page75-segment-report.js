@@ -11,6 +11,31 @@ function split(d){
  else{if(!p)p=[];p.push(c,...v);if(u==='L'||u==='T'){x=rel?px+v[0]:v[0];y=rel?py+v[1]:v[1];}else if(u==='H')x=rel?px+v[0]:v[0];else if(u==='V')y=rel?py+v[0]:v[0];else if('CSQA'.includes(u)){const ex=v[v.length-2],ey=v[v.length-1];x=rel?px+ex:ex;y=rel?py+ey:ey;}}
  }if(p)out.push(p.join(' '));return out;
 }
+
+function commandPieces(d){
+ const t=d.match(/[a-zA-Z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?\\d*)(?:[eE][-+]?\\d+)?/g)||[];
+ const ar={M:2,L:2,H:1,V:1,C:6,S:4,Q:4,T:2,A:7,Z:0},out=[];
+ let i=0,cmd=null,x=0,y=0,sx=0,sy=0;
+ while(i<t.length){
+  if(/^[a-zA-Z]$/.test(t[i]))cmd=t[i++];
+  if(!cmd)break;
+  const u=cmd.toUpperCase(),rel=cmd!==u,n=ar[u];
+  if(n===undefined)break;
+  if(!n){out.push({d:'M '+x+' '+y+' Z',cmd:'Z',sx:x,sy:y,ex:sx,ey:sy});x=sx;y=sy;cmd=null;continue;}
+  if(i+n>t.length)break;
+  const v=t.slice(i,i+n).map(Number);i+=n;
+  const px=x,py=y;
+  let ex=x,ey=y;
+  if(u==='M'||u==='L'||u==='T'){ex=rel?px+v[0]:v[0];ey=rel?py+v[1]:v[1];}
+  else if(u==='H')ex=rel?px+v[0]:v[0];
+  else if(u==='V')ey=rel?py+v[0]:v[0];
+  else if('CSQA'.includes(u)){const q=v.length;ex=rel?px+v[q-2]:v[q-2];ey=rel?py+v[q-1]:v[q-1];}
+  const actual=(u==='M'&&out.length>0)?(rel?'l':'L'):cmd;
+  out.push({d:'M '+px+' '+py+' '+actual+' '+v.join(' '),cmd:actual,sx:px,sy:py,ex,ey});
+  x=ex;y=ey;if(u==='M'){sx=x;sy=y;cmd=rel?'l':'L';}
+ }
+ return out;
+}
 function install(){
  const box=document.querySelector('#ayaTajweedOverlay .at-box');if(!box||document.getElementById('atSegmentReport'))return;
  const w=document.createElement('section');w.id='atSegmentReport';w.style.cssText='margin-top:12px;padding-top:10px;border-top:1px solid #8885';
@@ -29,7 +54,7 @@ function install(){
  const parts=split(src.getAttribute('d')||''),rows=[],tr='matrix('+[mat.a,mat.b,mat.c,mat.d,mat.e,mat.f].join(' ')+')';
  parts.forEach((d,i)=>{const g=document.createElementNS(NS,'g');g.setAttribute('transform',tr);probe.appendChild(g);const p=document.createElementNS(NS,'path');p.setAttribute('d',d);g.appendChild(p);const b=p.getBBox();const r={i:i+1,x:b.x,y:b.y,w:b.width,h:b.height,cx:b.x+b.width/2,cy:b.y+b.height/2,d,commands:(d.match(/[a-zA-Z]/g)||[]).length,moveCount:(d.match(/[Mm]/g)||[]).length};if(b.x<=BOX.x2&&b.x+b.width>=BOX.x1&&b.y<=BOX.y2&&b.y+b.height>=BOX.y1)rows.push(r);g.remove();});
  probe.remove();root.remove();root=null;
- out.textContent='الأجزاء المتقاطعة مع حدود الكلمة: '+rows.length+' من '+parts.length+'\\n'+rows.map(r=>'#'+r.i+' x='+r.x.toFixed(2)+' y='+r.y.toFixed(2)+' w='+r.w.toFixed(2)+' h='+r.h.toFixed(2)+' cx='+r.cx.toFixed(2)+' cy='+r.cy.toFixed(2)+' أوامر='+r.commands+' بدايات='+r.moveCount).join('\\n')+'\\n\\nالمسارات الخام لكل الأجزاء المتقاطعة (لتحليل الحروف والعلامات):\\n\\n'+rows.map(r=>'========== الجزء #'+r.i+' ==========\\n'+r.d).join('\\n\\n')+'\\n\\nملاحظة: التقرير تشخيصي فقط ولا يغيّر ألوان المصحف.';
+ out.textContent='الأجزاء المتقاطعة مع حدود الكلمة: '+rows.length+' من '+parts.length+'\\n'+rows.map(r=>'#'+r.i+' x='+r.x.toFixed(2)+' y='+r.y.toFixed(2)+' w='+r.w.toFixed(2)+' h='+r.h.toFixed(2)+' cx='+r.cx.toFixed(2)+' cy='+r.cy.toFixed(2)+' أوامر='+r.commands+' بدايات='+r.moveCount).join('\\n')+'\\n\\nالمسارات الخام لكل الأجزاء المتقاطعة (لتحليل الحروف والعلامات):\\n\\n'+rows.map(r=>'========== الجزء #'+r.i+' ==========\\n'+r.d).join('\\n\\n')+'\\n\\nتفصيل منحنيات المسار #330 (كل أمر رسم منفصل):\\n'+commandPieces(parts[329]||'').map((s,i)=>{const g=document.createElementNS(NS,'g');g.setAttribute('transform',tr);probe.appendChild(g);const p=document.createElementNS(NS,'path');p.setAttribute('d',s.d);g.appendChild(p);const z=p.getBBox();g.remove();return '#'+(i+1)+' '+s.cmd+' start=('+s.sx.toFixed(2)+','+s.sy.toFixed(2)+') end=('+s.ex.toFixed(2)+','+s.ey.toFixed(2)+') box=('+z.x.toFixed(2)+','+z.y.toFixed(2)+','+z.width.toFixed(2)+','+z.height.toFixed(2)+')';}).join('\\n')+'\\n\\nملاحظة: التقرير تشخيصي فقط ولا يغيّر ألوان المصحف.';
  }catch(e){if(root)root.remove();out.textContent='فشل التحليل: '+e.message;}
  };
 }
