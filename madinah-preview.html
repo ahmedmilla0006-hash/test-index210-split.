@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تجربة مصحف المدينة — آية</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#e9e7df;color:#202820;font-family:system-ui,"Noto Naskh Arabic",sans-serif}
+header{padding:14px 16px;background:#176b3a;color:#fff;text-align:center}
+header h1{margin:0;font-size:19px}
+header p{margin:5px 0 0;font-size:13px}
+main{max-width:760px;margin:auto;padding:12px}
+.tools{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:8px 0 12px}
+button{border:1px solid #176b3a;background:#fff;color:#176b3a;border-radius:9px;padding:9px 13px;font-size:15px}
+button.active{background:#176b3a;color:#fff}
+#status{text-align:center;font-size:13px;margin:8px;color:#555}
+#page{background:#fff;max-width:520px;margin:0 auto;padding:8px;box-shadow:0 2px 12px #0002;border-radius:4px}
+#page svg{display:block;width:100%;height:auto}
+#page .ayahPolygon{fill:#16803b!important;fill-opacity:0!important;stroke:none!important;pointer-events:none}
+#page .ayahPolygon.test-highlight{fill:#f2c94c!important;fill-opacity:.52!important;stroke:#a66b00!important;stroke-width:1.1!important}
+.note{max-width:520px;margin:12px auto;text-align:center;font-size:12px;color:#555;line-height:1.7}
+</style>
+</head>
+<body>
+<header><h1>تجربة عرض مصحف المدينة</h1><p>رواية حفص — الصفحة الأولى — اختبار تظليل الآيات</p></header>
+<main>
+<div class="tools" id="ayahButtons" aria-label="اختيار آية للتظليل"></div>
+<div id="status">جارٍ تحميل صفحة المصحف…</div>
+<div id="page"></div>
+<p class="note">هذه صفحة اختبار مستقلة؛ لا تغيّر التطبيق ولا نظام الصوت أو التوقيت. مصدر صفحات SVG: quran-ws/quran-svg — ترخيص طبقة البيانات والمضلعات CC BY 4.0.</p>
+</main>
+<script>
+const PAGE_URL="https://raw.githubusercontent.com/quran-ws/quran-svg/main/mushafs/hafs/kfqc/svg/001.svg";
+const page=document.getElementById("page");
+const status=document.getElementById("status");
+const buttons=document.getElementById("ayahButtons");
+let selectedAyah=1;
+function paintAyah(n){
+ selectedAyah=n;
+ page.querySelectorAll(".ayahPolygon").forEach(path=>{
+  const same=Number(path.getAttribute("surah"))===1&&Number(path.getAttribute("ayah"))===n;
+  path.classList.toggle("test-highlight",same);
+ });
+ buttons.querySelectorAll("button").forEach(b=>b.classList.toggle("active",Number(b.dataset.ayah)===n));
+}
+for(let n=1;n<=7;n++){
+ const b=document.createElement("button");
+ b.type="button";b.textContent="الآية "+n;b.dataset.ayah=n;
+ b.addEventListener("click",()=>paintAyah(n));
+ buttons.appendChild(b);
+}
+fetch(PAGE_URL).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.text()})
+.then(source=>{
+ const parsed=new DOMParser().parseFromString(source,"image/svg+xml");
+ const svg=parsed.documentElement;
+ if(svg.nodeName.toLowerCase()!=="svg")throw new Error("ملف SVG غير صالح");
+ const polygons=svg.querySelectorAll(".ayahPolygon");
+ if(!polygons.length)throw new Error("لم نعثر على مضلعات الآيات");
+ page.replaceChildren(document.importNode(svg,true));
+ status.textContent="تم تحميل الصفحة بنجاح — عدد مناطق الآيات: "+polygons.length;
+ paintAyah(selectedAyah);
+})
+.catch(error=>{
+ status.textContent="تعذّر تحميل الصفحة: "+error.message+" — تحقق من الاتصال.";
+});
+</script>
+</body>
+</html>
