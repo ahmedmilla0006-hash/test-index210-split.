@@ -30,7 +30,7 @@
   status.setAttribute("role","status");
   pageArea.appendChild(status);
 
-  /* تلاوة الكلمات: نستخدم ملف الصوت نفسه الذي تعيده Quran.com مع توقيتاته */
+  /* صوت مصحف المدينة وتوقيتاته مصدر واحد: Quran.com */
   const audioEl=document.getElementById("audio");
   const RECITATION_IDS={
     shatri:4, sudais:3, afasy:7, husary:6,
@@ -42,10 +42,12 @@
   let activeWordKey="";
   let activeVerseKey="";
   let wordSurah=0;
+  let wordReaderKey="";
   let originalAudioUrl="";
   let wordAudioUrl="";
+  let wordLoadToken=0;
   let wordLoading=false;
-  let audioWasPlaying=false;
+
   function clearWord(){
     host.querySelectorAll("g.word.aya-word-active").forEach(el=>el.classList.remove("aya-word-active"));
     activeWordKey="";
@@ -54,11 +56,31 @@
     activeVerseKey="";
     clearWord();
   }
+  function verseIdentity(item){
+    const key=String(item&&item.verse_key||"");
+    const m=key.match(/^(\\d+):(\\d+)$/);
+    return m?{surah:Number(m[1]),ayah:Number(m[2])}:null;
+  }
+  function verseStart(item){
+    const starts=(item&&item.segments||[]).map(seg=>Number(seg[1])).filter(Number.isFinite);
+    return starts.length?Math.min(...starts):null;
+  }
+  function currentAyah(){
+    const ms=(audioEl.currentTime||0)*1000;
+    for(const verse of wordTimings){
+      const start=verseStart(verse);
+      const end=(verse.segments||[]).reduce((n,seg)=>Math.max(n,Number(seg[2])||0),0);
+      if(start!=null&&ms>=start&&ms<end){
+        const id=verseIdentity(verse);
+        if(id)return id.ayah;
+      }
+    }
+    return null;
+  }
   function paintWord(){
     if(!enabled||!audioEl||!wordTimings.length) return;
     const ms=audioEl.currentTime*1000;
-    let found=null;
-    let foundVerse="";
+    let found=null,foundVerse="";
     outer: for(const verse of wordTimings){
       for(const seg of (verse.segments||[])){
         if(ms>=Number(seg[1])&&ms<Number(seg[2])){
@@ -94,67 +116,139 @@
       return Number(currentAudioSurah)||Number(getSurahNumberForPage(currentPageNumber()))||1;
     }catch(e){return 1;}
   }
-  async function loadWordRecitation(force){
-    if(!enabled||!audioEl||wordLoading) return;
-    const surah=activeSurah();
-    /* اقرأ الاختيار الفعلي من القائمة؛ قد يتأخر تحديث المتغير العام selectedReader */
-    const readerSelectEl=document.getElementById("readerSelect");
-    const readerKey=(readerSelectEl&&readerSelectEl.value)
-      || (typeof selectedReader!=="undefined"?selectedReader:"");
+  function readerKeyNow(){
+    const select=document.getElementById("readerSelect");
+    return (select&&select.value)||(typeof selectedReader!=="undefined"?selectedReader:"");
+  }
+  function setPlayerStatus(message){
+    status.textContent=message||"";
+  }
+  function waitForAudioMetadata(){
+    if(audioEl.readyState>=1)return Promise.resolve();
+    return new Promise((resolve,reject)=>{
+      let done=false;
+      const finish=error=>{
+        if(done)return;done=true;
+        audioEl.removeEventListener("loadedmetadata",onReady);
+        audioEl.removeEventListener("error",onError);
+        clearTimeout(timer);
+        error?reject(error):resolve();
+      };
+      const onReady=()=>finish();
+      const onError=()=>finish(new Error("تعذر تحميل ملف التلاوة"));
+      const timer=setTimeout(()=>finish(new Error("انتهت مهلة تحميل التلاوة")),15000);
+      audioEl.addEventListener("loadedmetadata",onReady,{once:true});
+      audioEl.addEventListener("error",onError,{once:true});
+    });
+  }
+  async function switchToSurah(surah,options={}){
+    if(!enabled||!audioEl)return false;
+    const targetSurah=Number(surah)||activeSurah();
+    const readerKey=options.readerKey||readerKeyNow();
     const recitationId=RECITATION_IDS[readerKey];
     if(!recitationId){
-      status.textContent="تلوين الكلمات غير متاح لهذا القارئ حاليًا؛ لم نغيّر تسجيله.";
-      return;
+      setPlayerStatus("تلوين الكلمات غير متاح لهذا القارئ؛ لم نستخدم توقيتات قارئ آخر.");
+      return false;
     }
-    if(!force&&wordSurah===surah&&wordTimings.length&&wordAudioUrl) return;
-    wordLoading=true;
-    status.textContent="جارٍ تجهيز تسجيل الكلمات وتوقيتاتها…";
+    const requestedAyah=Number(options.ayah)||null;
+    const wasPlaying=options.play===true;
+    const token=++wordLoadToken;
+    const sameRecording=wordSurah===targetSurah&&wordReaderKey===readerKey&&wordTimings.length&&wordAudioUrl;
     try{
-      const response=await fetch("https://api.quran.com/api/v4/chapter_recitations/"+recitationId+"/"+surah+"?segments=true",{headers:{Accept:"application/json"},cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP "+response.status);
-      const data=await response.json();
-      const af=data.audio_file||{};
-      const list=Array.isArray(af.timestamps)?af.timestamps:[];
-      if(!af.audio_url||!list.length||!list.some(v=>Array.isArray(v.segments)&&v.segments.length)){
-        throw new Error("لا توجد توقيتات كلمات مكتملة لهذه السورة والقارئ");
+      wordLoading=true;
+      if(!sameRecording){
+        setPlayerStatus("جارٍ تجهيز صوت القارئ وتوقيتات كلماته…");
+        const response=await fetch("https://api.quran.com/api/v4/chapter_recitations/"+recitationId+"/"+targetSurah+"?segments=true",{headers:{Accept:"application/json"},cache:"no-store"});
+        if(!response.ok)throw new Error("HTTP "+response.status);
+        const data=await response.json();
+        const af=data.audio_file||{};
+        const list=Array.isArray(af.timestamps)?af.timestamps:[];
+        if(!af.audio_url||!list.length||!list.some(v=>Array.isArray(v.segments)&&v.segments.length)){
+          throw new Error("لا توجد توقيتات كلمات مكتملة لهذه السورة والقارئ");
+        }
+        if(token!==wordLoadToken)return false;
+        wordTimings=list;
+        wordSurah=targetSurah;
+        wordReaderKey=readerKey;
+        wordAudioUrl=af.audio_url;
       }
-      wordTimings=list;
-      wordSurah=surah;
-      clearVerse();
-      wordAudioUrl=af.audio_url;
-      originalAudioUrl=String(audioEl.currentSrc||audioEl.src||"");
-      audioWasPlaying=!audioEl.paused;
-      audioEl.pause();
+      if(token!==wordLoadToken)return false;
+      const verse=wordTimings.find(v=>{
+        const id=verseIdentity(v);
+        return id&&id.surah===targetSurah&&(!requestedAyah||id.ayah===requestedAyah)&&verseStart(v)!=null;
+      })||wordTimings.find(v=>verseIdentity(v)&&verseStart(v)!=null);
+      const startMs=verse?verseStart(verse):0;
+      const needNewSource=String(audioEl.currentSrc||audioEl.src||"")!==String(wordAudioUrl);
+      if(needNewSource){
+        audioEl.pause();
+        audioEl.__ayaMadinahWordAudio=true;
+        audioEl.__ayaPartialUrl="";
+        audioEl.__ayaPartialMaxSec=0;
+        audioEl.__ayaResumeAfterPartial=0;
+        audioEl.src=wordAudioUrl;
+        audioEl.load();
+        await waitForAudioMetadata();
+      }
+      if(token!==wordLoadToken)return false;
       audioEl.__ayaMadinahWordAudio=true;
-      audioEl.src=wordAudioUrl;
-      audioEl.load();
-      audioEl.currentTime=0;
-      clearWord();
-      status.textContent=readerKey==="shatri"
-        ?"جاهز: تسجيل أبو بكر الشاطري المتزامن مع توقيتات الكلمات."
-        :"جاهز: تسجيل القارئ المحدد المتزامن مع توقيتات الكلمات.";
-      if(audioWasPlaying) await audioEl.play();
+      if(startMs!=null)audioEl.currentTime=Math.max(0,startMs/1000);
+      if(typeof currentAudioSurah!=="undefined")currentAudioSurah=targetSurah;
+      clearVerse();
+      paintWord();
+      if(typeof refreshTimeDisplay==="function")refreshTimeDisplay({resetCurrent:!requestedAyah});
+      setPlayerStatus("جاهز: صوت "+(readerKey==="shatri"?"أبي بكر الشاطري":"القارئ المحدد")+" مع توقيتاته الأصلية.");
+      if(wasPlaying){
+        try{await audioEl.play();}catch(e){throw new Error("تم تحميل الصوت لكن تعذر بدء التشغيل");}
+      }
+      return true;
     }catch(error){
-      wordTimings=[];wordSurah=0;wordAudioUrl="";
-      status.textContent="تعذر تجهيز تلوين الكلمات: "+error.message;
-      console.warn("[Aya word recitation]",error);
-    }finally{wordLoading=false;}
+      if(token===wordLoadToken){
+        setPlayerStatus("تعذر تجهيز صوت الكلمات: "+error.message);
+        console.warn("[Aya Madinah word audio]",error);
+      }
+      return false;
+    }finally{
+      if(token===wordLoadToken)wordLoading=false;
+    }
+  }
+  async function loadWordRecitation(force){
+    if(!enabled||!audioEl)return;
+    const surah=activeSurah();
+    const readerKey=readerKeyNow();
+    if(!force&&wordSurah===surah&&wordReaderKey===readerKey&&wordTimings.length)return;
+    const keepAyah=currentAyah();
+    const wasPlaying=!audioEl.paused;
+    await switchToSurah(surah,{readerKey,ayah:keepAyah||1,play:wasPlaying});
   }
   function restoreOriginalRecitation(){
-    if(!audioEl||!wordAudioUrl) return;
+    if(!audioEl)return;
     const wasPlaying=!audioEl.paused;
     const surah=activeSurah();
     let url="";
-    try{url=typeof getAudioUrl==="function"?getAudioUrl(selectedReader,currentPageNumber(),surah):"";}catch(e){}
-    if(!url) url=originalAudioUrl;
+    try{url=typeof getAudioUrl==="function"?getAudioUrl(readerKeyNow(),currentPageNumber(),surah):"";}catch(e){}
+    if(!url)url=originalAudioUrl;
     audioEl.pause();
-    if(url){audioEl.src=url;audioEl.load();if(wasPlaying)audioEl.play().catch(()=>{});}
     audioEl.__ayaMadinahWordAudio=false;
-    wordTimings=[];wordSurah=0;wordAudioUrl="";originalAudioUrl="";
+    if(url){audioEl.src=url;audioEl.load();if(wasPlaying)audioEl.play().catch(()=>{});}
+    wordTimings=[];wordSurah=0;wordReaderKey="";wordAudioUrl="";originalAudioUrl="";
     clearVerse();
-    if(wordFrame) cancelAnimationFrame(wordFrame);
+    if(wordFrame)cancelAnimationFrame(wordFrame);
     wordFrame=0;
   }
+
+  /* واجهة ربط يستخدمها مشغّل آية الأصلي؛ لا ننشئ مشغلاً بديلاً. */
+  window.__ayaMadinahAudioBridge={
+    isEnabled:()=>enabled,
+    changeReader:({surah,ayah,play})=>switchToSurah(surah,{readerKey:readerKeyNow(),ayah,play}),
+    updateSource:({surah,ayah,play,keepPosition})=>{
+      const target=Number(surah)||activeSurah();
+      if(target===wordSurah&&wordReaderKey===readerKeyNow()&&wordTimings.length){
+        if(keepPosition&&!ayah)return Promise.resolve(true);
+      }
+      return switchToSurah(target,{readerKey:readerKeyNow(),ayah:ayah||1,play:!!play});
+    },
+    getCurrentAyah:currentAyah
+  };
 
   function currentPageNumber(){
     const n=Number(localStorage.getItem("quranPage")||1);
@@ -167,7 +261,7 @@
     button.textContent=enabled?"العودة للمصحف الحالي":"مصحف المدينة";
     localStorage.setItem("ayaMadinahMushaf",enabled?"1":"0");
     status.textContent="";
-    if(enabled){ renderPage(currentPageNumber()); loadWordRecitation(true); }
+    if(enabled){ originalAudioUrl=String(audioEl&& (audioEl.currentSrc||audioEl.src)||""); renderPage(currentPageNumber()); loadWordRecitation(true); }
     else { restoreOriginalRecitation(); host.replaceChildren(); }
   }
   async function getSvg(pageNo){
