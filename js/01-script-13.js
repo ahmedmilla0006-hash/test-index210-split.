@@ -2679,7 +2679,10 @@ function updateAudioSource(keepPosition = false, options = {}){
 
   /* امنع مسارات آية المعتادة من استبدال تسجيل مصحف المدينة بتسجيل MP3Quran. */
   if(window.__ayaMadinahAudioBridge&&window.__ayaMadinahAudioBridge.isEnabled()){
-    const bridgeSurah=Number(options.surahNumber||currentAudioSurah||getSurahNumberForPage(currentPage))||1;
+    const hasPageNavigation=Object.prototype.hasOwnProperty.call(options,"surahNumber")||
+      Object.prototype.hasOwnProperty.call(options,"startAyah");
+    const pageSurah=typeof getSurahNumberForPage==="function"?getSurahNumberForPage(currentPage):0;
+    const bridgeSurah=Number(options.surahNumber||(hasPageNavigation?pageSurah:currentAudioSurah)||pageSurah)||1;
     const bridgePlay=!!(!audio.paused||(typeof userWantsPlay!=="undefined"&&userWantsPlay)||options.autoContinue);
     const bridgeAyah=Number(options.startAyah)||null;
     window.__ayaMadinahAudioBridge.updateSource({
