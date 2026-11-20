@@ -1,0 +1,55 @@
+/* عرض مصحف المدينة داخل مساحة الصفحة نفسها مع إبقاء المصحف الأصلي محفوظاً */
+.madinah-mushaf-host{
+  display:none;
+  position:absolute;
+  inset:36px 0 44px;
+  z-index:5;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  pointer-events:none;
+}
+.madinah-mushaf-host svg{
+  display:block;
+  width:auto;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  background:#fff;
+  direction:rtl;
+}
+body.aya-madinah-mode #quranPage{visibility:hidden!important}
+body.aya-madinah-mode #ayahHighlightLayer{display:none!important}
+body.aya-madinah-mode .madinah-mushaf-host{display:flex}
+.madinah-mushaf-toggle{
+  position:absolute;
+  top:48px;
+  right:10px;
+  z-index:35;
+  border:1px solid rgba(22,128,59,.3);
+  border-radius:10px;
+  padding:7px 11px;
+  background:rgba(255,255,255,.96);
+  color:#176b37;
+  font:700 12px Tahoma,Arial,sans-serif;
+  box-shadow:0 2px 8px #0002;
+  cursor:pointer;
+  pointer-events:auto;
+}
+.madinah-mushaf-status{
+  display:none;
+  position:absolute;
+  z-index:36;
+  top:88px;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:90%;
+  padding:7px 12px;
+  border-radius:9px;
+  background:rgba(0,0,0,.76);
+  color:#fff;
+  font:12px Tahoma,Arial,sans-serif;
+  pointer-events:none;
+}
+body.aya-madinah-mode .madinah-mushaf-status:not(:empty){display:block}
+.night-mode body.aya-madinah-mode .madinah-mushaf-host svg{background:#fff}
