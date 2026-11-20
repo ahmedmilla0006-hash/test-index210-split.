@@ -7,7 +7,7 @@
   align-items:center;
   justify-content:center;
   overflow:hidden;
-  pointer-events:none;
+  pointer-events:auto;
 }
 .madinah-mushaf-host svg{
   display:block;
