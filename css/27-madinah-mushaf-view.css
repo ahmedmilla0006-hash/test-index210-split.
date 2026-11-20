@@ -53,3 +53,11 @@ body.aya-madinah-mode .madinah-mushaf-host{display:flex}
 }
 body.aya-madinah-mode .madinah-mushaf-status:not(:empty){display:block}
 .night-mode body.aya-madinah-mode .madinah-mushaf-host svg{background:#fff}
+
+/* تمييز الكلمة الحالية مع الحفاظ على ألوان SVG الأصلية لبقية الكلمات */
+.madinah-mushaf-host g.word.aya-word-active path{
+  fill:#e09a16!important;
+}
+.madinah-mushaf-host g.word.aya-word-active{
+  filter:drop-shadow(0 0 1px #e09a16);
+}
