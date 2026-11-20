@@ -67,15 +67,16 @@
   }
   function currentAyah(){
     const ms=(audioEl.currentTime||0)*1000;
+    let nearest=null,nearestStart=-Infinity;
     for(const verse of wordTimings){
       const start=verseStart(verse);
       const end=(verse.segments||[]).reduce((n,seg)=>Math.max(n,Number(seg[2])||0),0);
-      if(start!=null&&ms>=start&&ms<end){
-        const id=verseIdentity(verse);
-        if(id)return id.ayah;
-      }
+      const id=verseIdentity(verse);
+      if(!id||start==null)continue;
+      if(ms>=start&&ms<end)return id.ayah;
+      if(start<=ms&&start>nearestStart){nearest=id.ayah;nearestStart=start;}
     }
-    return null;
+    return nearest;
   }
   function paintWord(){
     if(!enabled||!audioEl||!wordTimings.length) return;
