@@ -54,10 +54,16 @@ body.aya-madinah-mode .madinah-mushaf-host{display:flex}
 body.aya-madinah-mode .madinah-mushaf-status:not(:empty){display:block}
 .night-mode body.aya-madinah-mode .madinah-mushaf-host svg{background:#fff}
 
-/* تمييز الكلمة الحالية مع الحفاظ على ألوان SVG الأصلية لبقية الكلمات */
+/* الآية الحالية كاملة بالأخضر، والكلمة المنطوقة حاليًا بالأزرق */
+.madinah-mushaf-host g.word.aya-verse-active path{
+  fill:#17803c!important;
+}
+.madinah-mushaf-host g.word.aya-verse-active{
+  filter:drop-shadow(0 0 0.6px #17803c);
+}
 .madinah-mushaf-host g.word.aya-word-active path{
-  fill:#e09a16!important;
+  fill:#1677e8!important;
 }
 .madinah-mushaf-host g.word.aya-word-active{
-  filter:drop-shadow(0 0 1px #e09a16);
+  filter:drop-shadow(0 0 1px #1677e8);
 }
