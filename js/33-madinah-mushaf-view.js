@@ -229,7 +229,10 @@
       if(!next) return;
       try{
         if(typeof resetRepeat==="function") resetRepeat();
-        audioEl.currentTime=Math.max(0,next.start/1000);
+        /* نبدأ قبل توقيت أول كلمة بقليل؛ بعض مشغلات الهاتف قد تتجاوز بداية المقطع
+           عند القفز مباشرة إلى حدّ التوقيت. */
+        const seekLeadMs=900;
+        audioEl.currentTime=Math.max(0,(next.start-seekLeadMs)/1000);
         paintWord();
       }catch(error){console.warn("[Aya Madinah next ayah]",error);}
     },true);
