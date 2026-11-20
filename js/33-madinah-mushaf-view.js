@@ -242,8 +242,8 @@
     changeReader:({surah,ayah,play})=>switchToSurah(surah,{readerKey:readerKeyNow(),ayah,play}),
     updateSource:({surah,ayah,play,keepPosition})=>{
       const target=Number(surah)||activeSurah();
-      if(target===wordSurah&&wordReaderKey===readerKeyNow()&&wordTimings.length){
-        if(keepPosition&&!ayah)return Promise.resolve(true);
+      if(target===wordSurah&&wordReaderKey===readerKeyNow()&&wordTimings.length&&!ayah){
+        return Promise.resolve(true);
       }
       return switchToSurah(target,{readerKey:readerKeyNow(),ayah:ayah||1,play:!!play});
     },
@@ -342,11 +342,7 @@
     audioEl.addEventListener("pause",()=>{if(wordFrame)cancelAnimationFrame(wordFrame);wordFrame=0;});
     audioEl.addEventListener("timeupdate",paintWord);
   }
-  if(typeof readerSelect!=="undefined"&&readerSelect){
-    readerSelect.addEventListener("change",()=>{
-      if(enabled){wordTimings=[];wordSurah=0;wordAudioUrl="";setTimeout(()=>loadWordRecitation(true),0);}
-    });
-  }
+  /* تغيير القارئ يعالجه مشغّل آية عبر __ayaMadinahAudioBridge؛ لا نضيف مستمعًا منافسًا. */
   const observer=new MutationObserver(()=>{
     if(enabled){
       renderPage(currentPageNumber());
