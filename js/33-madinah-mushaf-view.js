@@ -99,7 +99,11 @@
   async function loadWordRecitation(force){
     if(!enabled||!audioEl||wordLoading) return;
     const surah=activeSurah();
-    const recitationId=RECITATION_IDS[typeof selectedReader!=="undefined"?selectedReader:""];
+    /* اقرأ الاختيار الفعلي من القائمة؛ قد يتأخر تحديث المتغير العام selectedReader */
+    const readerSelectEl=document.getElementById("readerSelect");
+    const readerKey=(readerSelectEl&&readerSelectEl.value)
+      || (typeof selectedReader!=="undefined"?selectedReader:"");
+    const recitationId=RECITATION_IDS[readerKey];
     if(!recitationId){
       status.textContent="تلوين الكلمات غير متاح لهذا القارئ حاليًا؛ لم نغيّر تسجيله.";
       return;
@@ -127,7 +131,9 @@
       audioEl.load();
       audioEl.currentTime=0;
       clearWord();
-      status.textContent="جاهز: تسجيل متزامن مع توقيتات الكلمات.";
+      status.textContent=readerKey==="shatri"
+        ?"جاهز: تسجيل أبو بكر الشاطري المتزامن مع توقيتات الكلمات."
+        :"جاهز: تسجيل القارئ المحدد المتزامن مع توقيتات الكلمات.";
       if(audioWasPlaying) await audioEl.play();
     }catch(error){
       wordTimings=[];wordSurah=0;wordAudioUrl="";
