@@ -201,6 +201,40 @@
     }
   }
   button.addEventListener("click",()=>setMode(!enabled));
+  /* زر الآية التالية: استخدم توقيتات تسجيل Quran.com في وضع مصحف المدينة،
+     لا توقيتات MP3Quran الخاصة بالمصحف الأصلي. */
+  const forwardAyahButton=document.getElementById("forwardButton");
+  if(forwardAyahButton){
+    forwardAyahButton.addEventListener("click",event=>{
+      if(!enabled||!audioEl||!wordTimings.length) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const now=audioEl.currentTime*1000;
+      const ordered=wordTimings.map((verse,index)=>{
+        const starts=(verse.segments||[])
+          .map(seg=>Number(seg[1]))
+          .filter(Number.isFinite);
+        return {verse,index,start:starts.length?Math.min(...starts):Infinity,
+          end:(verse.segments||[]).reduce((max,seg)=>Math.max(max,Number(seg[2])||0),0)};
+      }).filter(x=>Number.isFinite(x.start)).sort((a,b)=>a.start-b.start);
+      if(!ordered.length) return;
+      let current=ordered.findIndex(x=>now>=x.start&&now<x.end);
+      if(current<0){
+        for(let i=0;i<ordered.length;i++){
+          if(ordered[i].start<=now) current=i;
+          else break;
+        }
+      }
+      const next=ordered[current+1];
+      if(!next) return;
+      try{
+        if(typeof resetRepeat==="function") resetRepeat();
+        audioEl.currentTime=Math.max(0,next.start/1000);
+        paintWord();
+      }catch(error){console.warn("[Aya Madinah next ayah]",error);}
+    },true);
+  }
+
   if(audioEl){
     audioEl.addEventListener("play",startWordFrame);
     audioEl.addEventListener("pause",()=>{if(wordFrame)cancelAnimationFrame(wordFrame);wordFrame=0;});
