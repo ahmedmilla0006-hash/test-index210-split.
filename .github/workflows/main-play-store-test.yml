@@ -589,6 +589,8 @@ jobs:
           # Apply audio patch after notification patch restores generated Java files.
           test -f app-source/scripts/add-adhan-audio.py
           python3 app-source/scripts/add-adhan-audio.py
+          # Restore prayer alarms after reboot using credential-protected settings.
+          python3 app-source/scripts/fix-adhan-boot-restore.py
           if [ -f android-app/www/js/32-aya-prayer-times.js ]; then
             mkdir -p android-app/android/app/src/main/assets/public/js
             cp -f android-app/www/js/32-aya-prayer-times.js android-app/android/app/src/main/assets/public/js/ 2>/dev/null || true
