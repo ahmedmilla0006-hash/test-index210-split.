@@ -177,8 +177,13 @@
       const verse=wordTimings.find(v=>{
         const id=verseIdentity(v);
         return id&&id.surah===targetSurah&&(!requestedAyah||id.ayah===requestedAyah)&&verseStart(v)!=null;
-      })||wordTimings.find(v=>verseIdentity(v)&&verseStart(v)!=null);
-      const startMs=verse?verseStart(verse):0;
+      });
+      if(!verse){
+        throw new Error(requestedAyah
+          ? "لم نعثر على توقيت الآية المطلوبة؛ أبقينا الصوت دون تغيير."
+          : "لا توجد آية ذات توقيت صالح لهذه السورة.");
+      }
+      const startMs=verseStart(verse);
       const needNewSource=String(audioEl.currentSrc||audioEl.src||"")!==String(wordAudioUrl);
       if(needNewSource){
         audioEl.pause();
@@ -246,9 +251,10 @@
       if(target===wordSurah&&wordReaderKey===readerKeyNow()&&wordTimings.length&&!ayah){
         return Promise.resolve(true);
       }
-      return switchToSurah(target,{readerKey:readerKeyNow(),ayah:ayah||1,play:!!play});
+      return switchToSurah(target,{readerKey:readerKeyNow(),ayah:ayah||null,play:!!play});
     },
-    getCurrentAyah:currentAyah
+    getCurrentAyah:currentAyah,
+    setStatus:setPlayerStatus
   };
 
   function currentPageNumber(){
