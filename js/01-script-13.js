@@ -1534,30 +1534,28 @@ if(
 }
 
 function getSurahNumberForPage(pageNumber){
+  const pageNo = Number(pageNumber) || 1;
+
   /*
-    نُرجع أول سورة لها محتوى في الصفحة (وليس آخر سورة تبدأ فيها).
-    مثال: صفحة 587 → الانفطار قبل المطففين.
+    إذا بدأت سورة في هذه الصفحة نختار أول سورة تبدأ فيها.
+    هذا يمنع إرجاع الفاتحة للصفحة 2 بسبب تداخل نهاية نطاقها
+    مع صفحة بداية البقرة، ويحافظ على ترتيب السور في الصفحات
+    التي تبدأ فيها أكثر من سورة مثل الصفحة 604.
   */
+  for(let i = 0; i < surahs.length; i++){
+    if(Number(surahs[i][1]) === pageNo) return i + 1;
+  }
+
   if(typeof getSurahsOnPage === "function"){
-    const list = getSurahsOnPage(pageNumber);
+    const list = getSurahsOnPage(pageNo);
     if(list && list.length) return list[0];
   }
 
-  for(let i = 0; i < surahs.length; i++){
-
-    const startPage = Number(surahs[i][1]);
-    const nextStart =
-      i < surahs.length - 1
-        ? Number(surahs[i + 1][1])
-        : TOTAL_PAGES + 1;
-
-    if(pageNumber >= startPage && pageNumber < nextStart){
-      return i + 1;
-    }
-
+  for(let i = surahs.length - 1; i >= 0; i--){
+    if(pageNo >= Number(surahs[i][1])) return i + 1;
   }
 
-  return 1;
+  return 0;
 }
 
 function getAudioUrl(readerKey, pageNumber, explicitSurah = null){
@@ -2651,8 +2649,8 @@ function updateAudioSource(keepPosition = false, options = {}){
 
   /* امنع مسارات آية المعتادة من استبدال تسجيل مصحف المدينة بتسجيل MP3Quran. */
   if(window.__ayaMadinahAudioBridge&&window.__ayaMadinahAudioBridge.isEnabled()){
-    const hasPageNavigation=Object.prototype.hasOwnProperty.call(options,"surahNumber")||
-      Object.prototype.hasOwnProperty.call(options,"startAyah");
+    const hasPageNavigation=Number(options.surahNumber)>0||
+      Number(options.startAyah)>0;
     const pageSurah=typeof getSurahNumberForPage==="function"?getSurahNumberForPage(currentPage):0;
     const bridgeSurah=Number(options.surahNumber||(hasPageNavigation?pageSurah:currentAudioSurah)||pageSurah)||1;
     const bridgePlay=!!(!audio.paused||(typeof userWantsPlay!=="undefined"&&userWantsPlay)||options.autoContinue);
@@ -2678,6 +2676,10 @@ function updateAudioSource(keepPosition = false, options = {}){
           }
         }catch(e){}
         if(navToken!==audioPageToken||targetPage!==currentPage)return;
+        if(!targetAyah||!targetSurah){
+          window.__ayaMadinahAudioBridge.setStatus("تعذر تحديد أول آية في الصفحة؛ لم نغيّر مصدر الصوت.");
+          return;
+        }
         window.__ayaMadinahAudioBridge.updateSource({
           surah:targetSurah,
           ayah:targetAyah,
