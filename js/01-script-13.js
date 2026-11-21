@@ -191,45 +191,8 @@ function prevPage(){
    يُلغى إذا نجح ضغط مطوّل على آية حتى لا تتغيّر الصفحة بالخطأ
 ========================= */
 
-pageArea.addEventListener(
-  "touchstart",
-  e=>{
-
-    startX =
-      e.touches[0].clientX;
-
-  },
-  {passive:true}
-);
-
-pageArea.addEventListener(
-  "touchend",
-  e=>{
-
-    /* لا تقلب الصفحة بعد اختيار آية بالضغط المطوّل */
-    if(typeof longPressTriggered !== "undefined" && longPressTriggered){
-      return;
-    }
-
-    const endX =
-      e.changedTouches[0].clientX;
-
-    const dx =
-      endX - startX;
-
-    if(Math.abs(dx) < 60){
-      return;
-    }
-
-    if(dx < 0){
-      prevPage();
-    }else{
-      nextPage();
-    }
-
-  },
-  {passive:true}
-);
+/* يعتمد تقليب الصفحات على pointerdown/pointerup أدناه،
+   حتى لا يتنافس مسارا Touch وPointer على أجهزة Android/WebView. */
 
 
 /* =========================
@@ -1245,6 +1208,15 @@ pageArea.addEventListener("pointerup", e=>{
   const dy = e.clientY - uiTapStartY;
   const elapsed = Date.now() - uiTapStartTime;
   const moved = Math.abs(dx) >= TAP_MOVE_MAX || Math.abs(dy) >= TAP_MOVE_MAX;
+
+  /* التقليب الأفقي عبر Pointer موحّد؛ لا نعتمد على touchend منفصل. */
+  if(Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 1.2){
+    tafsirPressTriggered = false;
+    if(dx < 0) prevPage();
+    else nextPage();
+    setTimeout(()=>{ longPressTriggered = false; }, 50);
+    return;
+  }
 
   /* تشغيل تلاوة (700ms): لا تفتح تفسير ولا تبدّل الواجهة */
   if(longPressTriggered){
@@ -2684,7 +2656,38 @@ function updateAudioSource(keepPosition = false, options = {}){
     const pageSurah=typeof getSurahNumberForPage==="function"?getSurahNumberForPage(currentPage):0;
     const bridgeSurah=Number(options.surahNumber||(hasPageNavigation?pageSurah:currentAudioSurah)||pageSurah)||1;
     const bridgePlay=!!(!audio.paused||(typeof userWantsPlay!=="undefined"&&userWantsPlay)||options.autoContinue);
-    const bridgeAyah=Number(options.startAyah)||null;
+    let bridgeAyah=Number(options.startAyah)||null;
+
+    /* عند تقليب الصفحة يدويًا: استخرج أول آية فعلية في أعلى الصفحة
+       من توقيتات آيات الصفحة، ثم أرسل السورة والآية إلى صوت مصحف المدينة.
+       لا نستخدم الآية 1 افتراضيًا؛ فهذا كان يسبب قفزًا إلى موضع غير صحيح. */
+    if(!keepPosition&&!bridgeAyah&&!hasPageNavigation&&
+       typeof loadPageHitTiming==="function"&&typeof getTopmostAyahItem==="function"){
+      const targetPage=currentPage;
+      const navToken=++audioPageToken;
+      (async()=>{
+        let targetSurah=bridgeSurah;
+        let targetAyah=null;
+        try{
+          const items=await loadPageHitTiming(targetPage);
+          if(navToken!==audioPageToken||targetPage!==currentPage)return;
+          const first=getTopmostAyahItem(items);
+          if(first){
+            targetSurah=Number(first._surah)||targetSurah;
+            targetAyah=Number(first.ayah)||null;
+          }
+        }catch(e){}
+        if(navToken!==audioPageToken||targetPage!==currentPage)return;
+        window.__ayaMadinahAudioBridge.updateSource({
+          surah:targetSurah,
+          ayah:targetAyah,
+          play:bridgePlay,
+          keepPosition:false
+        });
+      })();
+      return;
+    }
+
     window.__ayaMadinahAudioBridge.updateSource({
       surah:bridgeSurah,
       ayah:bridgeAyah,
