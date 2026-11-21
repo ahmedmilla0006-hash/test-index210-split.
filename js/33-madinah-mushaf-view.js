@@ -5,7 +5,7 @@
   const pageImage=document.getElementById("quranPage");
   if(!pageArea||!pageImage) return;
 
-  const CDN="https://cdn.quran.ws/svg/elements/v1.1.1/pages/";
+  const CDN="https://cdn.quran.ws/svg/pages/v1.1.1/hafs-kfqc/";
   const cache=new Map();
   let requestToken=0;
   let enabled=localStorage.getItem("ayaMadinahMushaf")==="1";
